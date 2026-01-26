@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,6 +30,19 @@ public interface AttendanceRepo extends JpaRepository<Attendance, Long> {
             String subjectCode,
             LocalDate date
     );
+    boolean existsByStudentEmailAndSubjectCodeAndDateAndStartTime(
+            String studentEmail,
+            String subjectCode,
+            LocalDate date,
+            LocalTime startTime
+    );
+    Optional<Attendance> findByStudentEmailAndSubjectCodeAndDateAndStartTime(
+            String studentEmail,
+            String subjectCode,
+            LocalDate date,
+            LocalTime startTime
+    );
+
 
 }
 

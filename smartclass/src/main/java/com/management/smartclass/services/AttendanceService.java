@@ -37,6 +37,17 @@ public class AttendanceService {
 
         QrSession qr = qrRepo.findByToken(token)
                 .orElseThrow(() -> new RuntimeException("Invalid QR"));
+        boolean alreadyMarked =
+                attendanceRepo.existsByStudentEmailAndSubjectCodeAndDateAndStartTime(
+                        studentEmail,
+                        qr.getSubjectCode(),
+                        LocalDate.now(),
+                        qr.getStartTime()
+                );
+
+        if (alreadyMarked) {
+            throw new RuntimeException("Attendance already marked for this period");
+        }
 
         if (qr.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("QR expired");
@@ -45,14 +56,15 @@ public class AttendanceService {
         Attendance att = new Attendance();
         att.setStudentEmail(studentEmail);
         att.setSubjectCode(qr.getSubjectCode());
-        att.setSubjectName(qr.getSubjectCode());
+        att.setSubjectName(qr.getSubjectName());
         att.setFacultyEmail(qr.getFacultyEmail());
         att.setDept(qr.getDept());
         att.setSection(qr.getSection());
         att.setSemester(qr.getSemester());
         att.setDate(LocalDate.now());
         att.setPresent(true);
-
+        att.setStartTime(qr.getStartTime());
+        att.setEndTime(qr.getEndTime());
         attendanceRepo.save(att);
         return "Attendance marked";
     }
@@ -85,28 +97,28 @@ public class AttendanceService {
             dto.setSubjectName(slot.getSubjectName());
             dto.setBreak(slot.isBreak());
 
-
+            // 🟨 BREAK
             if (slot.isBreak()) {
                 dto.setStatus("BREAK");
                 return dto;
             }
 
             boolean attendanceExists =
-                    attendanceRepo.findByStudentEmailAndSubjectCodeAndDate(
-                            studentEmail,
-                            slot.getSubjectCode(),
-                            date
-                    ).isPresent();
-
+                    attendanceRepo
+                            .findByStudentEmailAndSubjectCodeAndDateAndStartTime(
+                                    studentEmail,
+                                    slot.getSubjectCode(),
+                                    date,
+                                    slot.getStartTime()
+                            )
+                            .isPresent();
 
             if (attendanceExists) {
                 dto.setStatus("PRESENT");
             }
-
             else if (date.equals(today) && now.isBefore(slot.getEndTime())) {
                 dto.setStatus("NOT_MARKED");
             }
-
             else {
                 dto.setStatus("ABSENT");
             }

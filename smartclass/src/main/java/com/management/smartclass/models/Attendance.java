@@ -3,13 +3,21 @@ package com.management.smartclass.models;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Entity
-@Table(uniqueConstraints = {
-        @UniqueConstraint(columnNames = {
-                "studentEmail", "subjectCode", "date"
-        })
-})
+@Table(
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        columnNames = {
+                                "studentEmail",
+                                "subjectCode",
+                                "date",
+                                "startTime"
+                        }
+                )
+        }
+)
 public class Attendance {
 
     @Id
@@ -28,12 +36,16 @@ public class Attendance {
     private int semester;
 
     private LocalDate date;
+
+    private LocalTime startTime;
+    private LocalTime endTime;
+
     private boolean present;
 
     public Attendance() {
     }
 
-    public Attendance(Long id, String studentEmail, String subjectCode, String subjectName, String facultyEmail, String dept, String section, int semester, LocalDate date, boolean present) {
+    public Attendance(Long id, String studentEmail, String subjectCode, String subjectName, String facultyEmail, String dept, String section, int semester, LocalDate date, LocalTime startTime, LocalTime endTime, boolean present) {
         this.id = id;
         this.studentEmail = studentEmail;
         this.subjectCode = subjectCode;
@@ -43,6 +55,8 @@ public class Attendance {
         this.section = section;
         this.semester = semester;
         this.date = date;
+        this.startTime = startTime;
+        this.endTime = endTime;
         this.present = present;
     }
 
@@ -118,6 +132,22 @@ public class Attendance {
         this.date = date;
     }
 
+    public LocalTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public LocalTime getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(LocalTime endTime) {
+        this.endTime = endTime;
+    }
+
     public boolean isPresent() {
         return present;
     }
@@ -126,4 +156,3 @@ public class Attendance {
         this.present = present;
     }
 }
-

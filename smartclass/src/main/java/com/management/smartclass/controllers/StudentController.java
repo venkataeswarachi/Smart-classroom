@@ -16,6 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/student")
+
 public class StudentController {
     @Autowired
     private StudentService studentService;
@@ -99,7 +100,7 @@ public class StudentController {
         );
     }
 
-    // SEMESTER wise bhai attendancee
+    //no need this route just return no of classes attended
     @GetMapping("/semester/{sem}")
     public ResponseEntity<Long> semesterAttendance(
             Authentication auth,
@@ -112,7 +113,7 @@ public class StudentController {
                 )
         );
     }
-    @GetMapping("/monthly")
+    @GetMapping("/month-attendance")
     public ResponseEntity<List<MonthlyAttendanceDTO>> monthly(
             Authentication auth,
             @RequestParam int year,
@@ -126,6 +127,7 @@ public class StudentController {
                 )
         );
     }
+    // SEMESTER wise bhai attendancee
     @GetMapping("/semester/{sem}/percentage")
     public ResponseEntity<SemesterAttendanceDTO> semesterPercentage(
             Authentication auth,

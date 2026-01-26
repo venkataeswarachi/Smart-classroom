@@ -20,7 +20,7 @@ public class QrSession {
 
     private String facultyEmail;
     private String subjectCode;
-
+    private String subjectName;
     private String dept;
     private String section;
     private int semester;
@@ -34,11 +34,12 @@ public class QrSession {
     public QrSession() {
     }
 
-    public QrSession(Long id, String token, String facultyEmail, String subjectCode, String dept, String section, int semester, LocalDate date, LocalTime startTime, LocalTime endTime, LocalDateTime expiresAt) {
+    public QrSession(Long id, String token, String facultyEmail,String subjectName, String subjectCode, String dept, String section, int semester, LocalDate date, LocalTime startTime, LocalTime endTime, LocalDateTime expiresAt) {
         this.id = id;
         this.token = token;
         this.facultyEmail = facultyEmail;
         this.subjectCode = subjectCode;
+        this.subjectName = subjectName;
         this.dept = dept;
         this.section = section;
         this.semester = semester;
@@ -70,6 +71,14 @@ public class QrSession {
 
     public void setFacultyEmail(String facultyEmail) {
         this.facultyEmail = facultyEmail;
+    }
+
+    public String getSubjectName() {
+        return subjectName;
+    }
+
+    public void setSubjectName(String subjectName) {
+        this.subjectName = subjectName;
     }
 
     public String getSubjectCode() {

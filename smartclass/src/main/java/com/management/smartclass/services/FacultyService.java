@@ -88,6 +88,7 @@ public class FacultyService {
         qr.setToken(token);
         qr.setFacultyEmail(facultyEmail);
         qr.setSubjectCode(dto.getSubjectCode());
+        qr.setSubjectName(dto.getSubjectName());
         qr.setDept(dto.getDept());
         qr.setSection(dto.getSection());
         qr.setSemester(dto.getSemester());
