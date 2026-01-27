@@ -12,8 +12,9 @@ export default function StudentTimeTablePage() {
     useEffect(() => {
         const fetchTimetable = async () => {
             try {
-                const res = await api.get("/student/timetable");
+                const res = await api.get("/student/week");
                 setTimetable(res.data);
+                console.log("Timetable data:", res.data);
             } catch (err) {
                 console.error("Failed to fetch timetable", err);
             } finally {

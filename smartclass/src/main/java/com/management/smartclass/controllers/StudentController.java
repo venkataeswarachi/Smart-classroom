@@ -73,6 +73,7 @@ public class StudentController {
                         dto.getToken(), auth.getName())
         );
     }
+    //that day period wise attendance
     @GetMapping("/daily")
     public ResponseEntity<List<DailyAttendanceDTO>> daily(
             Authentication auth
