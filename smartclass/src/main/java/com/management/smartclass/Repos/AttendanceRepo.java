@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,7 +43,14 @@ public interface AttendanceRepo extends JpaRepository<Attendance, Long> {
             LocalDate date,
             LocalTime startTime
     );
+    List<Attendance> findByFacultyEmailAndSubjectCodeAndDateAndStartTime(
+            String facultyEmail,
+            String subjectCode,
+            LocalDate date,
+            LocalTime startTime
+    );
 
 
+    List<Attendance> findByFacultyEmailAndSubjectCodeAndDateAndStartTimeAndDeptAndSectionAndSemester(String facultyEmail, String subjectCode, LocalDate date, LocalTime startTime, String dept, String section, int semester);
 }
 

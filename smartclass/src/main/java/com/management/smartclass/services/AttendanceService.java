@@ -8,10 +8,7 @@ import com.management.smartclass.models.Attendance;
 import com.management.smartclass.models.QrSession;
 import com.management.smartclass.models.Students;
 import com.management.smartclass.models.TimeTableSlot;
-import com.management.smartclass.payload.AttendanceDTO;
-import com.management.smartclass.payload.DailyAttendanceDTO;
-import com.management.smartclass.payload.MonthlyAttendanceDTO;
-import com.management.smartclass.payload.SemesterAttendanceDTO;
+import com.management.smartclass.payload.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +16,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class AttendanceService {
@@ -217,4 +216,86 @@ public class AttendanceService {
         dto.setPresent(attendance.isPresent());
         return dto;
     }
+
+    public List<FacultyAttendanceViewDTO> getSessionAttendance(
+            String facultyEmail,
+            String subjectCode,
+            LocalDate date,
+            LocalTime startTime,
+            String dept,
+            String section,
+            int semester) {
+
+        // 1️⃣ Fetch all students of the class
+        List<Students> students =
+                studentRepo.findByDeptAndSectionAndSemester(
+                        dept, section, semester
+                );
+
+        // 2️⃣ Fetch attendance for the session
+        Map<String, Attendance> attendanceMap =
+                attendanceRepo
+                        .findByFacultyEmailAndSubjectCodeAndDateAndStartTimeAndDeptAndSectionAndSemester(
+                                facultyEmail,
+                                subjectCode,
+                                date,
+                                startTime,
+                                dept,
+                                section,
+                                semester
+                        )
+                        .stream()
+                        .collect(Collectors.toMap(
+                                Attendance::getStudentEmail,
+                                a -> a,
+                                (oldVal, newVal) -> newVal
+                        ));
+
+        // 3️⃣ Merge students + attendance
+        return students.stream().map(stu -> {
+
+            FacultyAttendanceViewDTO dto =
+                    new FacultyAttendanceViewDTO();
+
+            dto.setStudentEmail(stu.getEmail());
+            dto.setStudentName(stu.getName());
+            dto.setRollNo(stu.getRollno());
+
+            Attendance att = attendanceMap.get(stu.getEmail());
+            dto.setPresent(att != null && att.isPresent());
+
+            return dto;
+
+        }).toList();
+    }
+
+    public void updateAttendance(
+            String facultyEmail,
+            String subjectCode,
+            LocalDate date,
+            LocalTime startTime,
+            FacultyAttendanceUpdateDTO dto) {
+
+        Attendance att =
+                attendanceRepo
+                        .findByStudentEmailAndSubjectCodeAndDateAndStartTime(
+                                dto.getStudentEmail(),
+                                subjectCode,
+                                date,
+                                startTime
+                        )
+                        .orElseThrow(() ->
+                                new RuntimeException("Attendance record not found")
+                        );
+
+        //check security
+        if (!att.getFacultyEmail().equals(facultyEmail)) {
+            throw new RuntimeException("Unauthorized update");
+        }
+
+        att.setPresent(dto.isPresent());
+        attendanceRepo.save(att);
+    }
 }
+
+

@@ -1,9 +1,8 @@
 package com.management.smartclass.controllers;
 
 import com.management.smartclass.models.Faculty;
-import com.management.smartclass.payload.FacultyPeriodDTO;
-import com.management.smartclass.payload.FacultyProfileDTO;
-import com.management.smartclass.payload.QrGenerateDTO;
+import com.management.smartclass.payload.*;
+import com.management.smartclass.services.AttendanceService;
 import com.management.smartclass.services.FacultyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +10,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @RestController
@@ -19,7 +20,8 @@ import java.util.List;
 public class FacultyController {
     @Autowired
     private FacultyService facultyService;
-
+    @Autowired
+    private AttendanceService attendanceService;
     @GetMapping("/profile")
     public ResponseEntity<Faculty> viewProfile(Authentication auth) {
         return ResponseEntity.ok(
@@ -67,5 +69,45 @@ public class FacultyController {
         return ResponseEntity.ok(
                 facultyService.generateQr(dto, auth.getName())
         );
+    }
+    @GetMapping("/session")
+    public ResponseEntity<List<FacultyAttendanceViewDTO>> getSession(
+            Authentication auth,
+            @RequestParam String subjectCode,
+            @RequestParam String date,
+            @RequestParam String startTime,
+            @RequestParam String dept,
+            @RequestParam String section,
+            @RequestParam int semester) {
+
+        return ResponseEntity.ok(
+                attendanceService.getSessionAttendance(
+                        auth.getName(),
+                        subjectCode,
+                        LocalDate.parse(date),
+                        LocalTime.parse(startTime),
+                        dept,
+                        section,
+                        semester
+                )
+        );
+    }
+    @PutMapping("/update")
+    public ResponseEntity<String> updateAttendance(
+            Authentication auth,
+            @RequestParam String subjectCode,
+            @RequestParam String date,
+            @RequestParam String startTime,
+            @RequestBody FacultyAttendanceUpdateDTO dto) {
+
+        attendanceService.updateAttendance(
+                auth.getName(),
+                subjectCode,
+                LocalDate.parse(date),
+                LocalTime.parse(startTime),
+                dto
+        );
+
+        return ResponseEntity.ok("Attendance updated");
     }
 }
