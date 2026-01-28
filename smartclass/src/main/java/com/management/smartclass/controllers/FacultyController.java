@@ -18,96 +18,86 @@ import java.util.List;
 @RequestMapping("/faculty")
 @PreAuthorize("hasRole('FACULTY')")
 public class FacultyController {
-    @Autowired
-    private FacultyService facultyService;
-    @Autowired
-    private AttendanceService attendanceService;
-    @GetMapping("/profile")
-    public ResponseEntity<Faculty> viewProfile(Authentication auth) {
-        return ResponseEntity.ok(
-                facultyService.getProfile(auth.getName())
-        );
-    }
+        @Autowired
+        private FacultyService facultyService;
 
-    @PutMapping("/profile")
-    public ResponseEntity<Faculty> editProfile(
-            Authentication auth,
-            @RequestBody FacultyProfileDTO dto) {
+        @GetMapping("/profile")
+        public ResponseEntity<Faculty> viewProfile(Authentication auth) {
+                return ResponseEntity.ok(
+                                facultyService.getProfile(auth.getName()));
+        }
 
-        return ResponseEntity.ok(
-                facultyService.updateProfile(auth.getName(), dto)
-        );
-    }
+        @PutMapping("/profile")
+        public ResponseEntity<Faculty> editProfile(
+                        Authentication auth,
+                        @RequestBody FacultyProfileDTO dto) {
 
-    @GetMapping("/today")
-    public ResponseEntity<List<FacultyPeriodDTO>> getToday(
-            Authentication auth) {
+                return ResponseEntity.ok(
+                                facultyService.updateProfile(auth.getName(), dto));
+        }
 
-        return ResponseEntity.ok(
-                facultyService.getTodayTimetable(auth.getName())
-        );
-    }
+        @GetMapping("/today")
+        public ResponseEntity<List<FacultyPeriodDTO>> getToday(
+                        Authentication auth) {
 
-    // perticlar DAY
-    @GetMapping("/day/{day}")
-    public ResponseEntity<List<FacultyPeriodDTO>> getByDay(
-            @PathVariable String day,
-            Authentication auth) {
+                return ResponseEntity.ok(
+                                facultyService.getTodayTimetable(auth.getName()));
+        }
 
-        return ResponseEntity.ok(
-                facultyService.getTimetableByDay(
-                        auth.getName(),
-                        day
-                )
-        );
-    }
-    @PostMapping("/generate-qr")
-    public ResponseEntity<String> generateQr(
-            @RequestBody QrGenerateDTO dto,
-            Authentication auth) {
+        // perticlar DAY
+        @GetMapping("/day/{day}")
+        public ResponseEntity<List<FacultyPeriodDTO>> getByDay(
+                        @PathVariable String day,
+                        Authentication auth) {
 
-        return ResponseEntity.ok(
-                facultyService.generateQr(dto, auth.getName())
-        );
-    }
-    @GetMapping("/session")
-    public ResponseEntity<List<FacultyAttendanceViewDTO>> getSession(
-            Authentication auth,
-            @RequestParam String subjectCode,
-            @RequestParam String date,
-            @RequestParam String startTime,
-            @RequestParam String dept,
-            @RequestParam String section,
-            @RequestParam int semester) {
+                return ResponseEntity.ok(
+                                facultyService.getTimetableByDay(
+                                                auth.getName(),
+                                                day));
+        }
 
-        return ResponseEntity.ok(
-                attendanceService.getSessionAttendance(
-                        auth.getName(),
-                        subjectCode,
-                        LocalDate.parse(date),
-                        LocalTime.parse(startTime),
-                        dept,
-                        section,
-                        semester
-                )
-        );
-    }
-    @PutMapping("/update")
-    public ResponseEntity<String> updateAttendance(
-            Authentication auth,
-            @RequestParam String subjectCode,
-            @RequestParam String date,
-            @RequestParam String startTime,
-            @RequestBody FacultyAttendanceUpdateDTO dto) {
+        @Autowired
+        private com.management.smartclass.services.AttendanceService attendanceService;
 
-        attendanceService.updateAttendance(
-                auth.getName(),
-                subjectCode,
-                LocalDate.parse(date),
-                LocalTime.parse(startTime),
-                dto
-        );
+        @PostMapping("/attendance/manual")
+        public ResponseEntity<String> manualAttendance(
+                        @RequestBody com.management.smartclass.payload.ManualAttendanceDTO dto) {
+                return ResponseEntity.ok(
+                                attendanceService.manualAttendance(
+                                                dto.getStudentEmail(),
+                                                dto.getSubjectCode(),
+                                                java.time.LocalDate.parse(dto.getDate()),
+                                                java.time.LocalTime.parse(dto.getStartTime()),
+                                                dto.isPresent()));
+        }
 
-        return ResponseEntity.ok("Attendance updated");
-    }
+        @GetMapping("/attendance/monitor")
+        public ResponseEntity<List<com.management.smartclass.models.Attendance>> monitorAttendance(
+                        @RequestParam String subjectCode,
+                        @RequestParam String date,
+                        @RequestParam String startTime) {
+
+                return ResponseEntity.ok(
+                                attendanceService.getClassAttendance(
+                                                subjectCode,
+                                                java.time.LocalDate.parse(date),
+                                                java.time.LocalTime.parse(startTime)));
+        }
+
+        @PostMapping("/generate-qr")
+        public ResponseEntity<String> generateQr(
+                        @RequestBody QrGenerateDTO dto,
+                        Authentication auth) {
+
+                return ResponseEntity.ok(
+                                facultyService.generateQr(dto, auth.getName()));
+        }
+
+        @Autowired
+        private com.management.smartclass.Repos.TimeTableRepo timeTableRepo;
+
+        @GetMapping("/timetable")
+        public ResponseEntity<?> getTimetable(Authentication auth) {
+                return ResponseEntity.ok(timeTableRepo.findByFacultyEmail(auth.getName()));
+        }
 }

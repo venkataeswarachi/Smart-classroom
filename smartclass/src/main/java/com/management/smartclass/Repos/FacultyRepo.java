@@ -9,4 +9,8 @@ import java.util.Optional;
 @Repository
 public interface FacultyRepo extends JpaRepository<Faculty, Long> {
     Optional<Faculty> findByEmail(String email);
+
+    long countByDepartment(String department);
+
+    java.util.List<Faculty> findAllByDepartment(String department);
 }

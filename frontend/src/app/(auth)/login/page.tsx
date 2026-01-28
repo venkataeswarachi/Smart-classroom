@@ -39,20 +39,24 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="flex min-h-screen items-center justify-center bg-background p-6">
             <div className="w-full max-w-md space-y-8">
-                <div className="text-center">
-                    <h2 className="text-2xl font-bold tracking-tight text-foreground">Welcome back</h2>
-                    <p className="mt-2 text-sm text-muted-foreground">
+                <div className="text-center space-y-2">
+                    <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center mx-auto text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-log-in"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" x2="3" y1="12" y2="12" /></svg>
+                    </div>
+                    <h2 className="text-3xl font-bold tracking-tight text-foreground">Welcome back</h2>
+                    <p className="text-muted-foreground">
                         Sign in to your account to continue
                     </p>
                 </div>
 
-                <Card className="border-border bg-card">
+                <Card className="border-border/60 shadow-xl shadow-primary/5 bg-card/80 backdrop-blur-sm">
                     <form onSubmit={handleSubmit}>
-                        <CardContent className="space-y-4 pt-6">
+                        <CardContent className="space-y-5 pt-8 px-8">
                             {error && (
-                                <div className="p-3 rounded-md bg-destructive/10 text-sm text-destructive border border-destructive/20">
+                                <div className="p-3 rounded-lg bg-destructive/10 text-sm font-medium text-destructive border border-destructive/20 flex items-center gap-2">
+                                    <span className="flex h-1.5 w-1.5 rounded-full bg-destructive flex-shrink-0" />
                                     {error}
                                 </div>
                             )}
@@ -63,7 +67,7 @@ export default function LoginPage() {
                                     id="email"
                                     type="email"
                                     placeholder="name@institution.edu"
-                                    className="bg-secondary/50 border-input focus-visible:ring-primary"
+                                    className="h-12 bg-white/50 focus:bg-white transition-all"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
@@ -73,14 +77,15 @@ export default function LoginPage() {
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
                                     <Label htmlFor="password">Password</Label>
-                                    <Link href="#" className="text-xs text-primary hover:text-primary/90">
+                                    <Link href="#" className="text-xs font-medium text-primary hover:text-primary/80 transition-colors">
                                         Forgot password?
                                     </Link>
                                 </div>
                                 <Input
                                     id="password"
                                     type="password"
-                                    className="bg-secondary/50 border-input focus-visible:ring-primary"
+                                    placeholder="Enter your password"
+                                    className="h-12 bg-white/50 focus:bg-white transition-all"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
@@ -88,17 +93,17 @@ export default function LoginPage() {
                             </div>
 
                             <Button
-                                className="w-full font-semibold"
+                                className="w-full h-12 text-base font-semibold shadow-lg shadow-primary/20"
                                 type="submit"
                                 disabled={loading}
                             >
-                                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Sign in"}
+                                {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Sign in"}
                             </Button>
                         </CardContent>
-                        <CardFooter className="justify-center border-t border-border pt-6">
+                        <CardFooter className="justify-center border-t border-border/50 pt-6 pb-6 bg-muted/20 rounded-b-xl">
                             <p className="text-sm text-muted-foreground">
                                 Don't have an account?{" "}
-                                <Link href="/signup" className="text-primary hover:text-primary/90 font-medium">
+                                <Link href="/signup" className="text-primary hover:text-primary/80 font-semibold transition-colors">
                                     Create one
                                 </Link>
                             </p>
