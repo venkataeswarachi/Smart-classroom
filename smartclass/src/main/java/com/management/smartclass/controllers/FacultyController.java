@@ -1,9 +1,8 @@
 package com.management.smartclass.controllers;
 
 import com.management.smartclass.models.Faculty;
-import com.management.smartclass.payload.FacultyPeriodDTO;
-import com.management.smartclass.payload.FacultyProfileDTO;
-import com.management.smartclass.payload.QrGenerateDTO;
+import com.management.smartclass.payload.*;
+import com.management.smartclass.services.AttendanceService;
 import com.management.smartclass.services.FacultyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +10,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @RestController

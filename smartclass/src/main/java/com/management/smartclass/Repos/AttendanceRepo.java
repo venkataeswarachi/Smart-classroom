@@ -6,45 +6,50 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface AttendanceRepo extends JpaRepository<Attendance, Long> {
 
-        List<Attendance> findByStudentEmailAndDate(
-                        String email, LocalDate date);
+    List<Attendance> findByStudentEmailAndDate(
+            String email, LocalDate date);
 
-        List<Attendance> findByStudentEmailAndSemester(
-                        String email, int semester);
+    List<Attendance> findByStudentEmailAndSemester(
+            String email, int semester);
 
-        List<Attendance> findByStudentEmailAndSubjectCode(
-                        String email, String subjectCode);
+    List<Attendance> findByStudentEmailAndSubjectCode(
+            String email, String subjectCode);
+    List<Attendance> findByStudentEmailAndDateBetween(
+            String studentEmail,
+            LocalDate startDate,
+            LocalDate endDate
+    );
+    Optional<Attendance> findByStudentEmailAndSubjectCodeAndDate(
+            String studentEmail,
+            String subjectCode,
+            LocalDate date
+    );
+    boolean existsByStudentEmailAndSubjectCodeAndDateAndStartTime(
+            String studentEmail,
+            String subjectCode,
+            LocalDate date,
+            LocalTime startTime
+    );
+    Optional<Attendance> findByStudentEmailAndSubjectCodeAndDateAndStartTime(
+            String studentEmail,
+            String subjectCode,
+            LocalDate date,
+            LocalTime startTime
+    );
+    List<Attendance> findByFacultyEmailAndSubjectCodeAndDateAndStartTime(
+            String facultyEmail,
+            String subjectCode,
+            LocalDate date,
+            LocalTime startTime
+    );
 
-        List<Attendance> findByStudentEmailAndDateBetween(
-                        String studentEmail,
-                        LocalDate startDate,
-                        LocalDate endDate);
 
-        Optional<Attendance> findByStudentEmailAndSubjectCodeAndDate(
-                        String studentEmail,
-                        String subjectCode,
-                        LocalDate date);
-
-        boolean existsByStudentEmailAndSubjectCodeAndDateAndStartTime(
-                        String studentEmail,
-                        String subjectCode,
-                        LocalDate date,
-                        LocalTime startTime);
-
-        Optional<Attendance> findByStudentEmailAndSubjectCodeAndDateAndStartTime(
-                        String studentEmail,
-                        String subjectCode,
-                        LocalDate date,
-                        LocalTime startTime);
-
-        List<Attendance> findBySubjectCodeAndDateAndStartTime(
-                        String subjectCode,
-                        LocalDate date,
-                        LocalTime startTime);
+    List<Attendance> findByFacultyEmailAndSubjectCodeAndDateAndStartTimeAndDeptAndSectionAndSemester(String facultyEmail, String subjectCode, LocalDate date, LocalTime startTime, String dept, String section, int semester);
 }

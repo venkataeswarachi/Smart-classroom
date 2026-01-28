@@ -31,6 +31,7 @@ export default function LoginPage() {
 
             login(token, role, email);
         } catch (err: any) {
+            console.error("Login error:", err);
             setError("Invalid email or password.");
         } finally {
             setLoading(false);

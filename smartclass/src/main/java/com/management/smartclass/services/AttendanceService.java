@@ -8,10 +8,7 @@ import com.management.smartclass.models.Attendance;
 import com.management.smartclass.models.QrSession;
 import com.management.smartclass.models.Students;
 import com.management.smartclass.models.TimeTableSlot;
-import com.management.smartclass.payload.AttendanceDTO;
-import com.management.smartclass.payload.DailyAttendanceDTO;
-import com.management.smartclass.payload.MonthlyAttendanceDTO;
-import com.management.smartclass.payload.SemesterAttendanceDTO;
+import com.management.smartclass.payload.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +16,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class AttendanceService {
@@ -245,3 +244,5 @@ public class AttendanceService {
                 return attendanceRepo.findBySubjectCodeAndDateAndStartTime(subjectCode, date, startTime);
         }
 }
+
+
