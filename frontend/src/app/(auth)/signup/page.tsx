@@ -15,7 +15,7 @@ export default function SignupPage() {
     const router = useRouter();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [role, setRole] = useState("ROLE_STUDENT");
+    const [role, setRole] = useState("STUDENT");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
@@ -93,10 +93,10 @@ export default function SignupPage() {
                                         value={role}
                                         onChange={(e) => setRole(e.target.value)}
                                     >
-                                        <option value="ROLE_STUDENT">Student</option>
-                                        <option value="ROLE_FACULTY">Faculty</option>
-                                        <option value="ROLE_DEPT_ADMIN">Department Admin</option>
-                                        <option value="ROLE_ADMIN">Administrator</option>
+                                        <option value="STUDENT">Student</option>
+                                        <option value="FACULTY">Faculty</option>
+                                        <option value="DEO">Department Admin</option>
+                                        <option value="ADMIN">Administrator</option>
                                     </select>
                                     <div className="absolute right-3 top-3.5 pointer-events-none opacity-50">
                                         <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">

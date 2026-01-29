@@ -21,6 +21,7 @@ public class AuthController {
     private AuthService authService;
     @PostMapping("/signup")
     public ResponseEntity<String> signUp(@RequestBody SignUpDTO signUpDTO){
+        System.out.println(signUpDTO.getRole());
         String res = authService.register(signUpDTO);
         return ResponseEntity.ok(res);
     }

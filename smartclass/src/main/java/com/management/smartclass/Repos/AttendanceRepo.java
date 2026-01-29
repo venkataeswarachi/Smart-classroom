@@ -52,4 +52,6 @@ public interface AttendanceRepo extends JpaRepository<Attendance, Long> {
 
 
     List<Attendance> findByFacultyEmailAndSubjectCodeAndDateAndStartTimeAndDeptAndSectionAndSemester(String facultyEmail, String subjectCode, LocalDate date, LocalTime startTime, String dept, String section, int semester);
+
+    List<Attendance> findBySubjectCodeAndDateAndStartTime(String subjectCode, LocalDate date, LocalTime startTime);
 }

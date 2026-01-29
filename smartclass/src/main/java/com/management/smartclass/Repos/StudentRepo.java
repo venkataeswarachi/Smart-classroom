@@ -16,4 +16,5 @@ public interface StudentRepo extends JpaRepository<Students, Long> {
             int semester
     );
 
+    long countByDept(String dept);
 }

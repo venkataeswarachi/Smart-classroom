@@ -1,5 +1,6 @@
 package com.management.smartclass.controllers;
 
+import com.management.smartclass.models.Faculty;
 import com.management.smartclass.payload.TimeTableGridDTO;
 import com.management.smartclass.services.DEOService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,17 +46,18 @@ public class DEOController {
         // For MVP, we'll hardcode or fetch from a profile service.
         // Let's assume the DEO manages "CSE" by default or fetch from user details if
         // extended.
-        String dept = "CSE"; // default for MVP
-
+          // default for MVP
+        Faculty faculty = facultyRepo.findByEmail(auth.getName()).orElseThrow(()->new RuntimeException("deo controller line 50"));
+        String dept =faculty.getDept();
         return ResponseEntity.ok(new com.management.smartclass.payload.DEOStatsDTO(
                 studentRepo.countByDept(dept),
-                facultyRepo.countByDepartment(dept)));
+                facultyRepo.countByDept(dept)));
     }
 
     @org.springframework.web.bind.annotation.GetMapping("/faculty-list")
     public ResponseEntity<java.util.List<com.management.smartclass.models.Faculty>> getFacultyList() {
         // Defaulting to CSE for MVP
-        return ResponseEntity.ok(facultyRepo.findAllByDepartment("CSE"));
+        return ResponseEntity.ok(facultyRepo.findAllByDept("CSM"));
     }
 
     @PostMapping("/assign-section")

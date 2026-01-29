@@ -10,7 +10,7 @@ import java.util.Optional;
 public interface FacultyRepo extends JpaRepository<Faculty, Long> {
     Optional<Faculty> findByEmail(String email);
 
-    long countByDepartment(String department);
+    long countByDept(String department);
 
-    java.util.List<Faculty> findAllByDepartment(String department);
+    java.util.List<Faculty> findAllByDept(String department);
 }
