@@ -28,7 +28,7 @@ export default function LoginPage() {
 
             const payload = JSON.parse(atob(token.split('.')[1]));
             const role = payload.roles || payload.role || payload.authorities?.[0]?.authority || "ROLE_STUDENT";
-
+            console.log("User role:", role);
             login(token, role, email);
         } catch (err: any) {
             console.error("Login error:", err);
