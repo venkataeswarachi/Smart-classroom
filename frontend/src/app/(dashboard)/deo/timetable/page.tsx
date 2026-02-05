@@ -192,7 +192,7 @@ export default function DEOTimetablePage() {
                         <tr className="bg-secondary/50 text-left border-b border-border">
                             <th className="p-4 font-medium w-32">Day</th>
                             {[1, 2, 3, 4, 5, 6, 7].map(p => {
-                                const isBreak = p === config.morningBreakAfter + 1 || p === config.lunchBreakAfter + 1; // Visual hint? Actually break adds extra time, but we index by period.
+
                                 // NOTE: Backend logic inserts break *after* the period index. So Period 1..2 (Break) 3..4 (Lunch)
                                 return (
                                     <th key={p} className="p-4 font-medium min-w-[140px]">

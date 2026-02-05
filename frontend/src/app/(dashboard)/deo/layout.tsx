@@ -5,12 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import {
-    BarChart,
-    Calendar,
     LayoutDashboard,
+    Calendar,
+    Users,
+    BookOpen,
     LogOut,
     Menu,
-    Users,
     X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,8 +18,9 @@ import { cn } from "@/lib/utils";
 
 const sidebarItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/deo" },
-    { icon: Calendar, label: "Timetables", href: "/deo/timetable" },
-    { icon: Users, label: "Students", href: "/deo/students" },
+    { icon: Calendar, label: "Timetable Mgmt", href: "/deo/timetable" },
+    { icon: BookOpen, label: "Curriculum Mgmt", href: "/deo/curriculum" },
+    { icon: Users, label: "Student Mgmt", href: "/deo/students" },
 ];
 
 export default function DEOLayout({ children }: { children: React.ReactNode }) {
@@ -46,7 +47,7 @@ export default function DEOLayout({ children }: { children: React.ReactNode }) {
             >
                 <div className="flex h-16 items-center px-6 border-b border-border/40">
                     <div className="h-8 w-8 bg-gradient-to-br from-primary to-orange-400 rounded-lg shadow-sm mr-3" />
-                    <span className="font-bold text-lg text-foreground tracking-tight">Dept Admin</span>
+                    <span className="font-bold text-lg text-foreground tracking-tight">SmartTrack</span>
                     <Button
                         variant="ghost"
                         size="icon"
@@ -79,10 +80,12 @@ export default function DEOLayout({ children }: { children: React.ReactNode }) {
 
                     <div>
                         <div className="mb-4 px-4 py-3 bg-muted/30 rounded-xl border border-border/50 flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">D</div>
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                                {user?.sub?.charAt(0) || "D"}
+                            </div>
                             <div className="overflow-hidden">
                                 <p className="text-sm font-semibold truncate text-foreground">{user?.sub || "DEO"}</p>
-                                <p className="text-xs text-muted-foreground font-medium">Department Admin</p>
+                                <p className="text-xs text-muted-foreground font-medium">Administrator</p>
                             </div>
                         </div>
                         <Button
@@ -108,7 +111,7 @@ export default function DEOLayout({ children }: { children: React.ReactNode }) {
                     >
                         <Menu className="h-6 w-6" />
                     </Button>
-                    <span className="ml-4 font-bold text-foreground">Dept Admin</span>
+                    <span className="ml-4 font-bold text-foreground">SmartTrack</span>
                 </header>
 
                 <div className="flex-1 overflow-auto p-4 md:p-8">

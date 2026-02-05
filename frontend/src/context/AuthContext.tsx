@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 router.push("/student");
                 break;
             case "ROLE_DEPT_ADMIN":
-                router.push("/dept-admin");
+                router.push("/deo");
                 break;
             case "ROLE_DEO":
                 router.push("/deo"); // If DEO exists
