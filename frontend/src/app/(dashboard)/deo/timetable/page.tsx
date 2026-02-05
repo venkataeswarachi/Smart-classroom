@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Loader2, CheckCircle, Upload, Plus, Pencil } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Loader2, CheckCircle, Upload, Plus, Pencil, Calendar, Settings2, Clock, ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 const DAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
 
@@ -32,8 +34,7 @@ export default function DEOTimetablePage() {
         lunchBreakMinutes: 60
     });
 
-    // Grid State: map of Day -> PeriodIndex -> Slot Data
-    // We initialize empty 7 periods (1-7) for 6 days
+    // Grid State
     const [gridData, setGridData] = useState<Record<string, Record<number, any>>>({
         "MONDAY": {}, "TUESDAY": {}, "WEDNESDAY": {}, "THURSDAY": {}, "FRIDAY": {}, "SATURDAY": {}
     });
@@ -48,7 +49,6 @@ export default function DEOTimetablePage() {
     });
 
     useEffect(() => {
-        // Fetch Faculty list for editor
         const fetchFaculty = async () => {
             try {
                 const res = await api.get("/deo/faculty-list");
@@ -92,31 +92,23 @@ export default function DEOTimetablePage() {
         setLoading(true);
         setMessage(null);
 
-        // Transform frontend gridData to Backend DTO Structure
-        // Backend expects: Map<String, DayGridDTO> where DayGridDTO has periods map
         const daysPayload: any = {};
-
         DAYS.forEach(day => {
             const periodsData: any = {};
-            // Loop 1 to 7
             for (let p = 1; p <= 7; p++) {
                 const cell = gridData[day]?.[p];
                 if (cell && cell.subjectName) {
-                    periodsData[p] = cell; // Cell matches PeriodCellDTO: subjectName, subjectCode, facultyEmail
+                    periodsData[p] = cell;
                 }
             }
             daysPayload[day] = { periods: periodsData };
         });
 
-        const payload = {
-            ...config,
-            days: daysPayload
-        };
+        const payload = { ...config, days: daysPayload };
 
         try {
             await api.post("/deo/post-timetable", payload);
             setMessage({ type: 'success', text: "Timetable Published Successfully!" });
-            // Optionally redirect or reset?
             setTimeout(() => setStep("config"), 2000);
         } catch (err) {
             setMessage({ type: 'error', text: "Failed to publish timetable." });
@@ -125,105 +117,176 @@ export default function DEOTimetablePage() {
         }
     };
 
+    const container = {
+        hidden: { opacity: 0 },
+        show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+    };
+
+    const item = {
+        hidden: { opacity: 0, y: 15 },
+        show: { opacity: 1, y: 0 }
+    };
+
     if (step === "config") {
         return (
-            <div className="max-w-3xl mx-auto space-y-6">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Create Timetable</h1>
-                    <p className="text-muted-foreground">Step 1: Define academic configuration and timing.</p>
-                </div>
-                <Card className="border-border bg-card">
-                    <CardHeader>
-                        <CardTitle>Configuration</CardTitle>
-                        <CardDescription>Setup the structure for {config.dept} - {config.section}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleCreateGrid} className="space-y-6">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2"><Label>Department</Label><Input value={config.dept} onChange={e => setConfig({ ...config, dept: e.target.value })} /></div>
-                                <div className="space-y-2"><Label>Section</Label><Input value={config.section} onChange={e => setConfig({ ...config, section: e.target.value })} /></div>
-                                <div className="space-y-2"><Label>Semester</Label><Input type="number" value={config.semester} onChange={e => setConfig({ ...config, semester: parseInt(e.target.value) })} /></div>
-                                <div className="space-y-2"><Label>Year</Label><Input type="number" value={config.year} onChange={e => setConfig({ ...config, year: parseInt(e.target.value) })} /></div>
+            <motion.div variants={container} initial="hidden" animate="show" className="max-w-4xl mx-auto space-y-6">
+                <motion.div variants={item} className="flex flex-col gap-2">
+                    <h1 className="text-4xl font-black tracking-tight text-foreground">
+                        Create Timetable<span className="text-primary">.</span>
+                    </h1>
+                    <p className="text-lg text-muted-foreground">Setup class scheduling and duration rules.</p>
+                </motion.div>
+
+                <motion.div variants={item}>
+                    <Card className="border-0 shadow-xl bg-card/50 backdrop-blur-sm ring-1 ring-black/5">
+                        <CardHeader>
+                            <div className="flex items-center gap-2 mb-2">
+                                <Settings2 className="h-5 w-5 text-primary" />
+                                <span className="font-bold uppercase text-xs tracking-wider text-muted-foreground">Step 1 of 2</span>
                             </div>
-                            <div className="border-t border-border pt-4">
-                                <h3 className="font-semibold mb-4">Timing & Breaks</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2"><Label>College Start Time</Label><Input type="time" value={config.collegeStartTime} onChange={e => setConfig({ ...config, collegeStartTime: e.target.value })} /></div>
-                                    <div className="space-y-2"><Label>Period Duration (min)</Label><Input type="number" value={config.periodDurationMinutes} onChange={e => setConfig({ ...config, periodDurationMinutes: parseInt(e.target.value) })} /></div>
-                                    <div className="space-y-2"><Label>Morning Break After (Period)</Label><Input type="number" value={config.morningBreakAfter} onChange={e => setConfig({ ...config, morningBreakAfter: parseInt(e.target.value) })} /></div>
-                                    <div className="space-y-2"><Label>Lunch Break After (Period)</Label><Input type="number" value={config.lunchBreakAfter} onChange={e => setConfig({ ...config, lunchBreakAfter: parseInt(e.target.value) })} /></div>
+                            <CardTitle>Configuration</CardTitle>
+                            <CardDescription>Define target section and time parameters.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <form onSubmit={handleCreateGrid} className="space-y-8">
+                                <div className="space-y-4">
+                                    <h3 className="font-semibold text-sm border-b pb-2 flex items-center gap-2">
+                                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                                        Target Batch
+                                    </h3>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div className="space-y-2">
+                                            <Label>Dept</Label>
+                                            <Input value={config.dept} onChange={e => setConfig({ ...config, dept: e.target.value })} className="bg-muted/50" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Section</Label>
+                                            <Input value={config.section} onChange={e => setConfig({ ...config, section: e.target.value })} className="bg-muted/50" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Semester</Label>
+                                            <Input type="number" value={config.semester} onChange={e => setConfig({ ...config, semester: parseInt(e.target.value) })} className="bg-muted/50" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Year</Label>
+                                            <Input type="number" value={config.year} onChange={e => setConfig({ ...config, year: parseInt(e.target.value) })} className="bg-muted/50" />
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <Button type="submit" className="w-full">Next: Edit Schedule</Button>
-                        </form>
-                    </CardContent>
-                </Card>
-            </div>
+
+                                <div className="space-y-4">
+                                    <h3 className="font-semibold text-sm border-b pb-2 flex items-center gap-2">
+                                        <Clock className="h-4 w-4 text-muted-foreground" />
+                                        Timing Rules
+                                    </h3>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div className="space-y-2">
+                                            <Label>Start Time</Label>
+                                            <Input type="time" value={config.collegeStartTime} onChange={e => setConfig({ ...config, collegeStartTime: e.target.value })} className="bg-muted/50" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Duration (min)</Label>
+                                            <Input type="number" value={config.periodDurationMinutes} onChange={e => setConfig({ ...config, periodDurationMinutes: parseInt(e.target.value) })} className="bg-muted/50" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Break After</Label>
+                                            <Input type="number" value={config.morningBreakAfter} onChange={e => setConfig({ ...config, morningBreakAfter: parseInt(e.target.value) })} className="bg-muted/50" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Lunch After</Label>
+                                            <Input type="number" value={config.lunchBreakAfter} onChange={e => setConfig({ ...config, lunchBreakAfter: parseInt(e.target.value) })} className="bg-muted/50" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex justify-end">
+                                    <Button type="submit" size="lg" className="font-bold shadow-lg shadow-primary/20">
+                                        Proceed to Scheduler <ArrowRight className="ml-2 h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </form>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+            </motion.div>
         );
     }
 
     // EDITOR VIEW
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div>
+        <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <motion.div variants={item}>
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">Edit Schedule</h1>
-                    <p className="text-muted-foreground">{config.dept} - {config.section} (Sem {config.semester})</p>
-                </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setStep("config")}>Back to Config</Button>
-                    <Button onClick={handlePublish} disabled={loading}>
+                    <p className="flex items-center gap-2 text-muted-foreground mt-1">
+                        <span className="font-medium text-foreground bg-secondary px-2 py-0.5 rounded">{config.dept} - {config.section}</span>
+                        <span>•</span>
+                        <span>Semester {config.semester}</span>
+                    </p>
+                </motion.div>
+                <motion.div variants={item} className="flex gap-2">
+                    <Button variant="outline" onClick={() => setStep("config")}>Back</Button>
+                    <Button onClick={handlePublish} disabled={loading} className="font-bold shadow-lg shadow-primary/20">
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Publish Timetable
                     </Button>
-                </div>
+                </motion.div>
             </div>
 
             {message && (
-                <div className={`p-4 rounded-md flex items-center gap-2 ${message.type === 'success' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                    <CheckCircle className="h-4 w-4" />
-                    {message.text}
-                </div>
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className={`p-4 rounded-lg flex items-center gap-3 border ${message.type === 'success' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-red-50 text-red-600 border-red-200'}`}
+                >
+                    <CheckCircle className="h-5 w-5" />
+                    <span className="font-semibold">{message.text}</span>
+                </motion.div>
             )}
 
-            <div className="overflow-x-auto rounded-lg border border-border bg-card">
+            <motion.div variants={item} className="overflow-x-auto rounded-xl border border-border shadow-xl bg-card">
                 <table className="w-full text-sm">
                     <thead>
-                        <tr className="bg-secondary/50 text-left border-b border-border">
-                            <th className="p-4 font-medium w-32">Day</th>
-                            {[1, 2, 3, 4, 5, 6, 7].map(p => {
-
-                                // NOTE: Backend logic inserts break *after* the period index. So Period 1..2 (Break) 3..4 (Lunch)
-                                return (
-                                    <th key={p} className="p-4 font-medium min-w-[140px]">
-                                        Period {p}
-                                        {p === config.morningBreakAfter && <span className="block text-[10px] text-muted-foreground text-center bg-secondary rounded mt-1">Break After This</span>}
-                                        {p === config.lunchBreakAfter && <span className="block text-[10px] text-muted-foreground text-center bg-secondary rounded mt-1">Lunch After This</span>}
-                                    </th>
-                                );
-                            })}
+                        <tr className="bg-muted/50 text-left border-b border-border">
+                            <th className="p-4 font-bold text-muted-foreground w-32 border-r border-border/50 sticky left-0 bg-muted/95 backdrop-blur">Day</th>
+                            {[1, 2, 3, 4, 5, 6, 7].map(p => (
+                                <th key={p} className="p-4 font-medium min-w-[160px] text-center">
+                                    <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Period {p}</div>
+                                    {p === config.morningBreakAfter && <span className="block text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full w-fit mx-auto mt-1">Break After</span>}
+                                    {p === config.lunchBreakAfter && <span className="block text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full w-fit mx-auto mt-1">Lunch After</span>}
+                                </th>
+                            ))}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-border">
+                    <tbody className="divide-y divide-border/50">
                         {DAYS.map(day => (
-                            <tr key={day} className="hover:bg-muted/30">
-                                <td className="p-4 font-semibold">{day.substring(0, 3)}</td>
+                            <tr key={day} className="group hover:bg-muted/10 transition-colors">
+                                <td className="p-4 font-bold text-foreground border-r border-border/50 sticky left-0 bg-card group-hover:bg-muted/10 transition-colors z-10">
+                                    {day.substring(0, 3)}
+                                </td>
                                 {[1, 2, 3, 4, 5, 6, 7].map(period => {
                                     const cell = gridData[day]?.[period];
                                     return (
-                                        <td key={period} className="p-2 border-l border-border first:border-0 relative group">
+                                        <td key={period} className="p-2 border-l border-border/30 first:border-0 relative">
                                             <div
                                                 onClick={() => openEditModal(day, period)}
-                                                className={`min-h-[80px] p-2 rounded-md cursor-pointer transition-all hover:ring-2 hover:ring-primary/20 ${cell?.subjectName ? "bg-primary/10 border border-primary/20" : "bg-secondary/20 border border-dashed border-border hover:bg-secondary/40"}`}
+                                                className={`min-h-[90px] p-3 rounded-lg cursor-pointer transition-all border ${cell?.subjectName
+                                                    ? "bg-primary/5 border-primary/20 hover:border-primary/50 hover:shadow-md"
+                                                    : "bg-transparent border-transparent hover:bg-muted/30 hover:border-border/60 border-dashed"
+                                                    }`}
                                             >
                                                 {cell?.subjectName ? (
-                                                    <div className="text-xs space-y-1">
-                                                        <div className="font-semibold truncate" title={cell.subjectName}>{cell.subjectName}</div>
-                                                        <div className="text-primary truncate">{cell.subjectCode}</div>
-                                                        <div className="text-muted-foreground truncate italic">{cell.facultyEmail?.split('@')[0]}</div>
+                                                    <div className="text-xs flex flex-col h-full justify-between">
+                                                        <div>
+                                                            <div className="font-bold text-foreground text-sm truncate mb-0.5" title={cell.subjectName}>{cell.subjectName}</div>
+                                                            <div className="text-primary font-mono text-[10px] bg-primary/10 w-fit px-1.5 py-0.5 rounded">{cell.subjectCode}</div>
+                                                        </div>
+                                                        <div className="flex items-center gap-1 text-muted-foreground mt-2">
+                                                            <div className="h-4 w-4 rounded-full bg-muted flex items-center justify-center text-[8px] font-bold">F</div>
+                                                            <span className="truncate max-w-[100px]">{cell.facultyEmail?.split('@')[0]}</span>
+                                                        </div>
                                                     </div>
                                                 ) : (
-                                                    <div className="h-full flex items-center justify-center text-muted-foreground/30 group-hover:text-primary">
+                                                    <div className="h-full flex items-center justify-center text-muted-foreground/20 group-hover:text-primary/50 transition-colors">
                                                         <Plus className="h-6 w-6" />
                                                     </div>
                                                 )}
@@ -235,9 +298,8 @@ export default function DEOTimetablePage() {
                         ))}
                     </tbody>
                 </table>
-            </div>
+            </motion.div>
 
-            {/* Edit Slot Dialog */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                 <DialogContent>
                     <DialogHeader>
@@ -267,10 +329,6 @@ export default function DEOTimetablePage() {
                                     )}
                                 </SelectContent>
                             </Select>
-                            {/* Fallback Input if Select is empty or custom needed? 
-                                For now, if list empty, user is stuck unless we allow custom.
-                                Let's add a condition if list is empty, show input.
-                            */}
                             {facultyList.length === 0 && (
                                 <Input
                                     placeholder="Or type faculty email manually"
@@ -283,10 +341,10 @@ export default function DEOTimetablePage() {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
-                        <Button onClick={saveCell}>Save Slot</Button>
+                        <Button onClick={saveCell} className="font-bold">Save Slot</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
+        </motion.div>
     );
 }

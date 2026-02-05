@@ -1,94 +1,131 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import api from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, FileText, Archive, ExternalLink } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Loader2, Search, ExternalLink, FileText, BookOpen, Layers } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function StudentResourcesPage() {
-    const [search, setSearch] = useState("");
-    const [resources, setResources] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    const [searchCode, setSearchCode] = useState("");
+    const [resources, setResources] = useState<any[]>([]);
+    const [searched, setSearched] = useState(false);
 
-    const handleSearch = async () => {
-        if (!search) return;
+    const handleSearch = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!searchCode.trim()) return;
+
         setLoading(true);
+        setSearched(true);
         try {
-            const res = await api.get(`/resource/subject/${search}`);
+            const res = await api.get(`/resource/subject/${searchCode.trim()}`);
             setResources(res.data);
         } catch (err) {
             console.error(err);
+            setResources([]);
         } finally {
             setLoading(false);
         }
     };
 
+    const container = {
+        hidden: { opacity: 0 },
+        show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+    };
+
+    const item = {
+        hidden: { opacity: 0, y: 15 },
+        show: { opacity: 1, y: 0 }
+    };
+
     return (
-        <div className="space-y-8">
-            <div className="flex flex-col gap-2">
+        <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="max-w-5xl mx-auto space-y-8 pb-10"
+        >
+            <motion.div variants={item} className="flex flex-col gap-2">
                 <h1 className="text-4xl font-black tracking-tight text-foreground">
-                    Study Materials<span className="text-primary">.</span>
+                    Learning Resources<span className="text-primary">.</span>
                 </h1>
-                <p className="text-lg text-muted-foreground">Search by Subject Code (e.g., CS101) to find resources.</p>
-            </div>
+                <p className="text-lg text-muted-foreground">Access study materials shared by your faculty.</p>
+            </motion.div>
 
-            <div className="relative max-w-md flex gap-2">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Enter Subject Code..."
-                        className="pl-10 bg-background/50 h-10 border-primary/20 focus-visible:ring-primary/20"
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                    />
-                </div>
-                <Button onClick={handleSearch} disabled={loading}>{loading ? "Searching..." : "Search"}</Button>
-            </div>
+            <motion.div variants={item}>
+                <Card className="border-0 shadow-md bg-white">
+                    <CardContent className="p-6">
+                        <form onSubmit={handleSearch} className="flex gap-4 items-end">
+                            <div className="flex-1 space-y-2">
+                                <Label>Subject Code</Label>
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Enter Subject Code (e.g. CS302)"
+                                        value={searchCode}
+                                        onChange={e => setSearchCode(e.target.value)}
+                                        className="pl-9 font-mono uppercase"
+                                    />
+                                </div>
+                            </div>
+                            <Button type="submit" className="font-bold min-w-[120px]" disabled={loading}>
+                                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Find Resources"}
+                            </Button>
+                        </form>
+                    </CardContent>
+                </Card>
+            </motion.div>
 
-            <div className="grid gap-4 md:grid-cols-1">
-                {resources.length === 0 && !loading && (
-                    <p className="text-muted-foreground">No resources found. Try searching for a subject code.</p>
+            <motion.div variants={item}>
+                {searched && resources.length === 0 && !loading && (
+                    <div className="text-center py-16 opacity-60">
+                        <Layers className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+                        <p className="text-lg font-medium">No resources found for "{searchCode}"</p>
+                        <p className="text-sm text-muted-foreground">Check the subject code or ask your faculty to upload materials.</p>
+                    </div>
                 )}
-                {resources.map((res, i) => (
-                    <motion.div
-                        key={res.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                    >
-                        <Card className="hover:bg-muted/30 transition-colors group border-border/60">
-                            <CardContent className="p-4 flex items-center gap-4">
-                                <div className="h-12 w-12 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center shrink-0">
-                                    <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">{res.title}</h3>
-                                        <span className="text-[10px] font-bold px-1.5 py-0.5 bg-muted rounded uppercase tracking-wide text-muted-foreground">LINK</span>
+
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {resources.map((res: any, idx) => (
+                        <motion.div variants={item} key={res.id || idx}>
+                            <Card className="h-full hover:shadow-lg transition-all border-border/60 hover:border-primary/40 group">
+                                <CardHeader className="pb-3">
+                                    <div className="flex justify-between items-start gap-4">
+                                        <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                                            <FileText className="h-5 w-5" />
+                                        </div>
+                                        <a
+                                            href={res.url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                        >
+                                            <ExternalLink className="h-4 w-4" />
+                                        </a>
                                     </div>
-                                    <p className="text-sm text-muted-foreground space-x-2">
-                                        <span className="font-medium text-foreground/80">{res.subjectCode}</span>
-                                        <span>•</span>
-                                        <span className="truncate max-w-[200px]">{res.description}</span>
+                                    <CardTitle className="leading-snug mt-3 line-clamp-2" title={res.title}>{res.title}</CardTitle>
+                                    <CardDescription className="font-mono text-xs text-primary bg-primary/5 w-fit px-2 py-0.5 rounded mt-1">
+                                        {res.subjectCode}
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm text-muted-foreground line-clamp-3 mb-4 min-h-[40px]">
+                                        {res.description || "No description provided."}
                                     </p>
-                                </div>
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="shrink-0 gap-2 border-primary/20 hover:bg-primary/5 hover:text-primary"
-                                    onClick={() => window.open(res.url, '_blank')}
-                                >
-                                    View <ExternalLink className="h-3 w-3" />
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                ))}
-            </div>
-        </div>
+                                    <div className="text-xs text-muted-foreground border-t pt-3 flex items-center gap-2">
+                                        <div className="h-4 w-4 rounded-full bg-muted flex items-center justify-center text-[8px] font-bold">F</div>
+                                        <span className="truncate">{res.facultyEmail?.split('@')[0]}</span>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    ))}
+                </div>
+            </motion.div>
+        </motion.div>
     );
 }
