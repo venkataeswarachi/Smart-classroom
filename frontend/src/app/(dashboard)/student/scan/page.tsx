@@ -70,8 +70,8 @@ export default function StudentScanPage() {
                                 placeholder="Enter QR Code / Token"
                                 value={token}
                                 onChange={(e) => setToken(e.target.value)}
-                                className="text-center text-lg tracking-widest uppercase"
-                                maxLength={10}
+                                className="text-center text-lg tracking-widest "
+                                maxLength={40}
                                 autoFocus
                             />
                         </div>
