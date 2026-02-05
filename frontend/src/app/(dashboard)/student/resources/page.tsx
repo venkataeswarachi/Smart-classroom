@@ -1,106 +1,131 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import api from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Folder, FileText, Download, ArrowLeft } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2, Search, ExternalLink, FileText, BookOpen, Layers } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function StudentResourcesPage() {
-    const [subjects, setSubjects] = useState<string[]>([]);
-    const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-    const [resources, setResources] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    const [searchCode, setSearchCode] = useState("");
+    const [resources, setResources] = useState<any[]>([]);
+    const [searched, setSearched] = useState(false);
 
-    // 1. Fetch Subjects (derived from timetable for now)
-    useEffect(() => {
-        const fetchSubjects = async () => {
-            try {
-                // Ideally backend provides "my-subjects", but we use timetable unique subjects
-                const res = await api.get("/student/timetable");
-                const unique = Array.from(new Set(res.data.map((t: any) => t.subjectCode).filter(Boolean))) as string[];
-                setSubjects(unique);
-            } catch (err) {
-                console.error(err);
-            }
-        };
-        fetchSubjects();
-    }, []);
+    const handleSearch = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!searchCode.trim()) return;
 
-    // 2. Fetch Resources when subject selected
-    useEffect(() => {
-        if (!selectedSubject) return;
-        const fetchResources = async () => {
-            setLoading(true);
-            try {
-                const res = await api.get(`/resource/subject/${selectedSubject}`);
-                setResources(res.data);
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchResources();
-    }, [selectedSubject]);
+        setLoading(true);
+        setSearched(true);
+        try {
+            const res = await api.get(`/resource/subject/${searchCode.trim()}`);
+            setResources(res.data);
+        } catch (err) {
+            console.error(err);
+            setResources([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    if (selectedSubject) {
-        return (
-            <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                    <Button variant="outline" size="sm" onClick={() => setSelectedSubject(null)}>
-                        <ArrowLeft className="h-4 w-4 mr-2" /> Back
-                    </Button>
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground">{selectedSubject} Resources</h1>
-                </div>
+    const container = {
+        hidden: { opacity: 0 },
+        show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+    };
 
-                {loading ? (
-                    <div className="text-muted-foreground">Loading resources...</div>
-                ) : resources.length === 0 ? (
-                    <div className="p-12 text-center border bg-card rounded-lg text-muted-foreground">
-                        No resources uploaded for this subject yet.
-                    </div>
-                ) : (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {resources.map((res: any) => (
-                            <Card key={res.id} className="hover:border-primary transition-colors cursor-pointer bg-card" onClick={() => window.open(res.url, '_blank')}>
-                                <CardContent className="pt-6 flex items-start gap-4">
-                                    <div className="p-2 bg-primary/10 rounded-lg">
-                                        <FileText className="h-6 w-6 text-primary" />
-                                    </div>
-                                    <div className="flex-1 overflow-hidden">
-                                        <h3 className="font-semibold truncate text-foreground">{res.title}</h3>
-                                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{res.description || "No description"}</p>
-                                    </div>
-                                    <Download className="h-4 w-4 text-muted-foreground" />
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                )}
-            </div>
-        );
-    }
+    const item = {
+        hidden: { opacity: 0, y: 15 },
+        show: { opacity: 1, y: 0 }
+    };
 
     return (
-        <div className="space-y-6">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">Course Material</h1>
-            <p className="text-muted-foreground">Select a subject to view available learning resources.</p>
+        <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="max-w-5xl mx-auto space-y-8 pb-10"
+        >
+            <motion.div variants={item} className="flex flex-col gap-2">
+                <h1 className="text-4xl font-black tracking-tight text-foreground">
+                    Learning Resources<span className="text-primary">.</span>
+                </h1>
+                <p className="text-lg text-muted-foreground">Access study materials shared by your faculty.</p>
+            </motion.div>
 
-            {subjects.length === 0 ? (
-                <div className="p-12 text-center text-muted-foreground">No subjects found in your schedule.</div>
-            ) : (
-                <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
-                    {subjects.map((sub) => (
-                        <Card key={sub} className="hover:bg-secondary/50 transition-colors cursor-pointer bg-card" onClick={() => setSelectedSubject(sub)}>
-                            <CardContent className="flex flex-col items-center justify-center p-8 gap-4">
-                                <Folder className="h-12 w-12 text-primary/80" />
-                                <span className="font-semibold text-lg text-foreground">{sub}</span>
-                            </CardContent>
-                        </Card>
+            <motion.div variants={item}>
+                <Card className="border-0 shadow-md bg-white">
+                    <CardContent className="p-6">
+                        <form onSubmit={handleSearch} className="flex gap-4 items-end">
+                            <div className="flex-1 space-y-2">
+                                <Label>Subject Code</Label>
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Enter Subject Code (e.g. CS302)"
+                                        value={searchCode}
+                                        onChange={e => setSearchCode(e.target.value)}
+                                        className="pl-9 font-mono uppercase"
+                                    />
+                                </div>
+                            </div>
+                            <Button type="submit" className="font-bold min-w-[120px]" disabled={loading}>
+                                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Find Resources"}
+                            </Button>
+                        </form>
+                    </CardContent>
+                </Card>
+            </motion.div>
+
+            <motion.div variants={item}>
+                {searched && resources.length === 0 && !loading && (
+                    <div className="text-center py-16 opacity-60">
+                        <Layers className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+                        <p className="text-lg font-medium">No resources found for "{searchCode}"</p>
+                        <p className="text-sm text-muted-foreground">Check the subject code or ask your faculty to upload materials.</p>
+                    </div>
+                )}
+
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {resources.map((res: any, idx) => (
+                        <motion.div variants={item} key={res.id || idx}>
+                            <Card className="h-full hover:shadow-lg transition-all border-border/60 hover:border-primary/40 group">
+                                <CardHeader className="pb-3">
+                                    <div className="flex justify-between items-start gap-4">
+                                        <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                                            <FileText className="h-5 w-5" />
+                                        </div>
+                                        <a
+                                            href={res.url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                        >
+                                            <ExternalLink className="h-4 w-4" />
+                                        </a>
+                                    </div>
+                                    <CardTitle className="leading-snug mt-3 line-clamp-2" title={res.title}>{res.title}</CardTitle>
+                                    <CardDescription className="font-mono text-xs text-primary bg-primary/5 w-fit px-2 py-0.5 rounded mt-1">
+                                        {res.subjectCode}
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm text-muted-foreground line-clamp-3 mb-4 min-h-[40px]">
+                                        {res.description || "No description provided."}
+                                    </p>
+                                    <div className="text-xs text-muted-foreground border-t pt-3 flex items-center gap-2">
+                                        <div className="h-4 w-4 rounded-full bg-muted flex items-center justify-center text-[8px] font-bold">F</div>
+                                        <span className="truncate">{res.facultyEmail?.split('@')[0]}</span>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
                     ))}
                 </div>
-            )}
-        </div>
+            </motion.div>
+        </motion.div>
     );
 }

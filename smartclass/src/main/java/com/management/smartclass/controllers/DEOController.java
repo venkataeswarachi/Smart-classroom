@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/deo")
-@PreAuthorize("hasRole('DEO')")
+@PreAuthorize("hasRole('DEPT_ADMIN')")
 public class DEOController {
 
     @Autowired
