@@ -1,42 +1,154 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import api from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea"; // Assuming this exists or I use Input
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Upload, Link as LinkIcon, CheckCircle, BookOpen } from "lucide-react";
-import { motion } from "framer-motion";
+import {
+    Loader2,
+    Upload,
+    CheckCircle,
+    FileText,
+    Eye,
+    AlertCircle,
+    CloudUpload,
+    File,
+    X
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+interface ResourceMeta {
+    id: number;
+    fileName: string;
+    subject: string;
+    fileSize: number;
+    uploadedAt: string;
+    uploadedBy: string;
+}
+
+function formatFileSize(bytes: number): string {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+}
+
+function formatDate(dateString: string): string {
+    return new Date(dateString).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+}
 
 export default function FacultyResourcesPage() {
     const [loading, setLoading] = useState(false);
+    const [fetchingResources, setFetchingResources] = useState(true);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [myResources, setMyResources] = useState<ResourceMeta[]>([]);
 
-    const [form, setForm] = useState({
-        title: "",
-        subjectCode: "",
-        url: "",
-        description: ""
-    });
+    // Form state
+    const [subject, setSubject] = useState("");
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [isDragOver, setIsDragOver] = useState(false);
+
+    const fetchMyResources = useCallback(async () => {
+        try {
+            const res = await api.get("/faculty/resources/my-uploads");
+            setMyResources(res.data);
+        } catch (err) {
+            console.error("Failed to fetch resources:", err);
+        } finally {
+            setFetchingResources(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchMyResources();
+    }, [fetchMyResources]);
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.type !== "application/pdf") {
+                setMessage({ type: 'error', text: "Only PDF files are allowed." });
+                return;
+            }
+            setSelectedFile(file);
+            setMessage(null);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(false);
+        const file = e.dataTransfer.files?.[0];
+        if (file) {
+            if (file.type !== "application/pdf") {
+                setMessage({ type: 'error', text: "Only PDF files are allowed." });
+                return;
+            }
+            setSelectedFile(file);
+            setMessage(null);
+        }
+    };
+
+    const clearFile = () => {
+        setSelectedFile(null);
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!selectedFile || !subject.trim()) {
+            setMessage({ type: 'error', text: "Please select a PDF file and enter a subject code." });
+            return;
+        }
+
         setLoading(true);
         setMessage(null);
 
         try {
-            await api.post("/resource/upload", form);
-            setMessage({ type: 'success', text: "Resource shared successfully!" });
-            setForm({ title: "", subjectCode: "", url: "", description: "" });
-        } catch (err) {
+            const formData = new FormData();
+            formData.append("file", selectedFile);
+            formData.append("subject", subject.trim().toUpperCase());
+
+            await api.post("/faculty/resources/upload", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data"
+                }
+            });
+
+            setMessage({ type: 'success', text: `"${selectedFile.name}" uploaded successfully!` });
+            setSelectedFile(null);
+            setSubject("");
+            fetchMyResources();
+        } catch (err: any) {
             console.error(err);
-            setMessage({ type: 'error', text: "Failed to share resource. Please try again." });
+            const errorMsg = err.response?.data?.message || err.response?.data || "Failed to upload resource. Please try again.";
+            setMessage({ type: 'error', text: typeof errorMsg === 'string' ? errorMsg : "Upload failed." });
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleViewPdf = (id: number) => {
+        // Open PDF in new tab
+        window.open(`http://localhost:4220/faculty/resources/view/${id}`, "_blank");
     };
 
     const container = {
@@ -54,15 +166,19 @@ export default function FacultyResourcesPage() {
             variants={container}
             initial="hidden"
             animate="show"
-            className="max-w-3xl mx-auto space-y-8 pb-10"
+            className="max-w-5xl mx-auto space-y-8 pb-10"
         >
+            {/* Header */}
             <motion.div variants={item} className="flex flex-col gap-2">
                 <h1 className="text-4xl font-black tracking-tight text-foreground">
                     Share Resources<span className="text-primary">.</span>
                 </h1>
-                <p className="text-lg text-muted-foreground">Upload study materials and reference links for students.</p>
+                <p className="text-lg text-muted-foreground">
+                    Upload PDF study materials for your students to access.
+                </p>
             </motion.div>
 
+            {/* Upload Form Card */}
             <motion.div variants={item}>
                 <Card className="border-0 shadow-lg bg-card/60 backdrop-blur-sm ring-1 ring-border/50">
                     <CardHeader className="pb-4 border-b border-border/50">
@@ -71,79 +187,204 @@ export default function FacultyResourcesPage() {
                                 <Upload className="h-5 w-5 text-blue-600" />
                             </div>
                             <div>
-                                <CardTitle>Upload Material</CardTitle>
-                                <CardDescription>Add a new resource link to the library.</CardDescription>
+                                <CardTitle>Upload PDF Material</CardTitle>
+                                <CardDescription>Select a PDF file and specify the subject code.</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-6">
                         <form onSubmit={handleSubmit} className="space-y-6">
-                            {message && (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: "auto" }}
-                                    className={`p-4 rounded-lg flex items-center gap-3 text-sm font-medium ${message.type === 'success' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-red-500/10 text-red-600 border border-red-500/20'}`}
-                                >
-                                    <CheckCircle className="h-4 w-4 shrink-0" />
-                                    {message.text}
-                                </motion.div>
-                            )}
+                            {/* Message Display */}
+                            <AnimatePresence mode="wait">
+                                {message && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: "auto" }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className={`p-4 rounded-lg flex items-center gap-3 text-sm font-medium ${message.type === 'success'
+                                                ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+                                                : 'bg-red-500/10 text-red-600 border border-red-500/20'
+                                            }`}
+                                    >
+                                        {message.type === 'success'
+                                            ? <CheckCircle className="h-4 w-4 shrink-0" />
+                                            : <AlertCircle className="h-4 w-4 shrink-0" />
+                                        }
+                                        {message.text}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label>Resource Title</Label>
-                                    <Input
-                                        placeholder="e.g. Chapter 4 Notes"
-                                        value={form.title}
-                                        onChange={e => setForm({ ...form, title: e.target.value })}
-                                        required
-                                        className="bg-background/50"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Subject Code</Label>
-                                    <Input
-                                        placeholder="e.g. CS302"
-                                        value={form.subjectCode}
-                                        onChange={e => setForm({ ...form, subjectCode: e.target.value })}
-                                        required
-                                        className="bg-background/50 font-mono"
-                                    />
-                                </div>
-                            </div>
-
+                            {/* Subject Code Input */}
                             <div className="space-y-2">
-                                <Label>Resource Link (URL)</Label>
-                                <div className="relative">
-                                    <LinkIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        placeholder="https://drive.google.com/..."
-                                        value={form.url}
-                                        onChange={e => setForm({ ...form, url: e.target.value })}
-                                        required
-                                        className="pl-9 bg-background/50 font-mono text-sm"
-                                    />
-                                </div>
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-bold pl-1">
-                                    Supports Drive, Dropbox, YouTube, or external docs
-                                </p>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Description</Label>
-                                <textarea
-                                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    placeholder="Brief details about this resource..."
-                                    value={form.description}
-                                    onChange={e => setForm({ ...form, description: e.target.value })}
+                                <Label htmlFor="subject">Subject Code</Label>
+                                <Input
+                                    id="subject"
+                                    placeholder="e.g. CS302, MATH101"
+                                    value={subject}
+                                    onChange={e => setSubject(e.target.value)}
+                                    required
+                                    className="bg-background/50 font-mono uppercase max-w-xs"
                                 />
                             </div>
 
-                            <Button type="submit" className="w-full font-bold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 transition-all bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600" disabled={loading}>
-                                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                                Share Resource
+                            {/* Drag and Drop Upload Zone */}
+                            <div className="space-y-2">
+                                <Label>PDF File</Label>
+                                <div
+                                    onDragOver={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={handleDrop}
+                                    className={`relative border-2 border-dashed rounded-xl p-8 transition-all duration-200 cursor-pointer
+                                        ${isDragOver
+                                            ? 'border-primary bg-primary/5 scale-[1.02]'
+                                            : selectedFile
+                                                ? 'border-emerald-500/50 bg-emerald-50/50'
+                                                : 'border-border/60 hover:border-primary/50 hover:bg-muted/30'
+                                        }`}
+                                    onClick={() => !selectedFile && document.getElementById('file-input')?.click()}
+                                >
+                                    <input
+                                        id="file-input"
+                                        type="file"
+                                        accept=".pdf,application/pdf"
+                                        onChange={handleFileSelect}
+                                        className="hidden"
+                                    />
+
+                                    {selectedFile ? (
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <div className="h-12 w-12 rounded-lg bg-red-100 flex items-center justify-center">
+                                                    <File className="h-6 w-6 text-red-600" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-foreground">{selectedFile.name}</p>
+                                                    <p className="text-sm text-muted-foreground">{formatFileSize(selectedFile.size)}</p>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    clearFile();
+                                                }}
+                                                className="hover:bg-red-100 hover:text-red-600"
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center">
+                                            <CloudUpload className={`h-12 w-12 mx-auto mb-4 transition-colors ${isDragOver ? 'text-primary' : 'text-muted-foreground'}`} />
+                                            <p className="font-semibold text-foreground mb-1">
+                                                {isDragOver ? "Drop your PDF here" : "Drag and drop your PDF"}
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                                or <span className="text-primary font-medium hover:underline">browse files</span>
+                                            </p>
+                                            <p className="text-xs text-muted-foreground mt-2">
+                                                PDF files only, max 50MB
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Submit Button */}
+                            <Button
+                                type="submit"
+                                className="w-full font-bold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 transition-all bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
+                                disabled={loading || !selectedFile}
+                            >
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Uploading...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload className="mr-2 h-4 w-4" />
+                                        Upload Resource
+                                    </>
+                                )}
                             </Button>
                         </form>
+                    </CardContent>
+                </Card>
+            </motion.div>
+
+            {/* My Uploads Section */}
+            <motion.div variants={item}>
+                <Card className="border-0 shadow-lg bg-card/60 backdrop-blur-sm ring-1 ring-border/50">
+                    <CardHeader className="pb-4 border-b border-border/50">
+                        <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                                <FileText className="h-5 w-5 text-emerald-600" />
+                            </div>
+                            <div>
+                                <CardTitle>My Uploads</CardTitle>
+                                <CardDescription>Resources you have shared with students.</CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        {fetchingResources ? (
+                            <div className="flex items-center justify-center py-12">
+                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                            </div>
+                        ) : myResources.length === 0 ? (
+                            <div className="text-center py-12 opacity-60">
+                                <FileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+                                <p className="text-lg font-medium">No resources uploaded yet</p>
+                                <p className="text-sm text-muted-foreground">
+                                    Upload your first PDF material using the form above.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {myResources.map((resource, idx) => (
+                                    <motion.div
+                                        key={resource.id}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: idx * 0.05 }}
+                                        className="flex items-center justify-between p-4 rounded-xl border border-border/50 hover:border-primary/30 hover:bg-muted/30 transition-all group"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
+                                                <FileText className="h-5 w-5 text-red-600" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="font-semibold text-foreground truncate" title={resource.fileName}>
+                                                    {resource.fileName}
+                                                </p>
+                                                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                                    <span className="font-mono bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                                        {resource.subject}
+                                                    </span>
+                                                    <span>{formatFileSize(resource.fileSize)}</span>
+                                                    <span>{formatDate(resource.uploadedAt)}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleViewPdf(resource.id)}
+                                                className="hover:bg-blue-100 hover:text-blue-600"
+                                                title="View PDF"
+                                            >
+                                                <Eye className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </motion.div>
