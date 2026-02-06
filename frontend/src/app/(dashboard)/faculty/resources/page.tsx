@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import api from "@/lib/api";
+import { API_BASE_URL } from "@/lib/constants";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -148,7 +149,7 @@ export default function FacultyResourcesPage() {
 
     const handleViewPdf = (id: number) => {
         // Open PDF in new tab
-        window.open(`http://localhost:4220/faculty/resources/view/${id}`, "_blank");
+        window.open(`${API_BASE_URL}/faculty/resources/view/${id}`, "_blank");
     };
 
     const container = {
@@ -202,8 +203,8 @@ export default function FacultyResourcesPage() {
                                         animate={{ opacity: 1, height: "auto" }}
                                         exit={{ opacity: 0, height: 0 }}
                                         className={`p-4 rounded-lg flex items-center gap-3 text-sm font-medium ${message.type === 'success'
-                                                ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
-                                                : 'bg-red-500/10 text-red-600 border border-red-500/20'
+                                            ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+                                            : 'bg-red-500/10 text-red-600 border border-red-500/20'
                                             }`}
                                     >
                                         {message.type === 'success'
@@ -351,7 +352,8 @@ export default function FacultyResourcesPage() {
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: idx * 0.05 }}
-                                        className="flex items-center justify-between p-4 rounded-xl border border-border/50 hover:border-primary/30 hover:bg-muted/30 transition-all group"
+                                        onClick={() => handleViewPdf(resource.id)}
+                                        className="flex items-center justify-between p-4 rounded-xl border border-border/50 hover:border-primary/30 hover:bg-muted/30 transition-all group cursor-pointer"
                                     >
                                         <div className="flex items-center gap-4">
                                             <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
@@ -374,7 +376,10 @@ export default function FacultyResourcesPage() {
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                onClick={() => handleViewPdf(resource.id)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleViewPdf(resource.id);
+                                                }}
                                                 className="hover:bg-blue-100 hover:text-blue-600"
                                                 title="View PDF"
                                             >
