@@ -147,9 +147,18 @@ export default function FacultyResourcesPage() {
         }
     };
 
-    const handleViewPdf = (id: number) => {
-        // Open PDF in new tab
-        window.open(`${API_BASE_URL}/faculty/resources/view/${id}`, "_blank");
+    const handleViewPdf = async (id: number) => {
+        try {
+            const response = await api.get(`/faculty/resources/view/${id}`, {
+                responseType: 'blob'
+            });
+            const file = new Blob([response.data], { type: 'application/pdf' });
+            const fileURL = URL.createObjectURL(file);
+            window.open(fileURL, "_blank");
+        } catch (error) {
+            console.error("Error viewing PDF:", error);
+            setMessage({ type: 'error', text: "Failed to load PDF. Please try again." });
+        }
     };
 
     const container = {
