@@ -113,69 +113,64 @@ export default function StudentResourcesPage() {
         show: { opacity: 1, y: 0 }
     };
 
-    const ResourceGrid = ({ data, emptyMessage }: { data: ResourceMeta[], emptyMessage: string }) => (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {data.length === 0 ? (
-                <div className="col-span-full text-center py-16 opacity-60">
-                    <Layers className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
-                    <p className="text-lg font-medium">{emptyMessage}</p>
-                    <p className="text-sm text-muted-foreground">Check later for new materials.</p>
-                </div>
-            ) : (
-                data.map((res) => (
-                    <motion.div variants={item} key={res.id}>
-                        <Card className="h-full hover:shadow-lg transition-all border-border/60 hover:border-primary/40 group flex flex-col">
-                            <CardHeader className="pb-3">
-                                <div className="flex justify-between items-start gap-4">
-                                    <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0">
-                                        <FileText className="h-5 w-5" />
+    const ResourceList = ({ data, emptyMessage }: { data: ResourceMeta[], emptyMessage: string }) => (
+        <Card className="border-0 shadow-lg bg-card/60 backdrop-blur-sm ring-1 ring-border/50">
+            <CardContent className="pt-6">
+                {data.length === 0 ? (
+                    <div className="text-center py-12 opacity-60">
+                        <Layers className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+                        <p className="text-lg font-medium">{emptyMessage}</p>
+                        <p className="text-sm text-muted-foreground">Check later for new materials.</p>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {data.map((res, idx) => (
+                            <motion.div
+                                key={res.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.05 }}
+                                onClick={() => handleViewPdf(res.id)}
+                                className="flex items-center justify-between p-4 rounded-xl border border-border/50 hover:border-primary/30 hover:bg-muted/30 transition-all group cursor-pointer"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
+                                        <FileText className="h-5 w-5 text-red-600" />
                                     </div>
+                                    <div className="min-w-0">
+                                        <p className="font-semibold text-foreground truncate" title={res.fileName}>
+                                            {res.fileName}
+                                        </p>
+                                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                            <span className="font-mono bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                                {res.subject}
+                                            </span>
+                                            <span>{formatFileSize(res.fileSize)}</span>
+                                            <span>Uploaded by {res.uploadedBy}</span>
+                                            <span>{formatDate(res.uploadedAt)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        onClick={() => handleViewPdf(res.id)}
-                                        className="h-8 w-8 rounded-full hover:bg-blue-100 hover:text-blue-600 transition-colors"
-                                        title="Open PDF"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleViewPdf(res.id);
+                                        }}
+                                        className="hover:bg-blue-100 hover:text-blue-600"
+                                        title="View PDF"
                                     >
-                                        <ExternalLink className="h-4 w-4" />
+                                        <Eye className="h-4 w-4" />
                                     </Button>
                                 </div>
-                                <CardTitle className="leading-snug mt-3 line-clamp-2 text-base" title={res.fileName}>
-                                    {res.fileName}
-                                </CardTitle>
-                                <CardDescription className="font-mono text-xs text-primary bg-primary/5 w-fit px-2 py-0.5 rounded mt-1">
-                                    {res.subject}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="mt-auto pt-0">
-                                <div className="space-y-2 text-sm text-muted-foreground mb-4">
-                                    <div className="flex items-center gap-2">
-                                        <User className="h-3 w-3" />
-                                        <span className="truncate">{res.uploadedBy}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Calendar className="h-3 w-3" />
-                                        <span>{formatDate(res.uploadedAt)}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Layers className="h-3 w-3" />
-                                        <span>{formatFileSize(res.fileSize)}</span>
-                                    </div>
-                                </div>
-                                <Button
-                                    onClick={() => handleViewPdf(res.id)}
-                                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-900 border border-slate-200"
-                                    variant="outline"
-                                >
-                                    <Eye className="mr-2 h-4 w-4" />
-                                    View Document
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                ))
-            )}
-        </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
+            </CardContent>
+        </Card>
     );
 
     return (
@@ -232,7 +227,7 @@ export default function StudentResourcesPage() {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
                             >
-                                <ResourceGrid
+                                <ResourceList
                                     data={resources}
                                     emptyMessage={`No resources found for "${searchCode}"`}
                                 />
@@ -243,7 +238,7 @@ export default function StudentResourcesPage() {
 
                 <TabsContent value="all" className="mt-6">
                     <motion.div variants={item}>
-                        <ResourceGrid
+                        <ResourceList
                             data={allResources}
                             emptyMessage="No resources available yet."
                         />
