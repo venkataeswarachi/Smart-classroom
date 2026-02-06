@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import api from "@/lib/api";
+import { API_BASE_URL } from "@/lib/constants";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,7 +88,7 @@ export default function StudentResourcesPage() {
     };
 
     const handleViewPdf = (id: number) => {
-        window.open(`http://localhost:4220/faculty/resources/view/${id}`, "_blank");
+        window.open(`${API_BASE_URL}/faculty/resources/view/${id}`, "_blank");
     };
 
     const container = {
