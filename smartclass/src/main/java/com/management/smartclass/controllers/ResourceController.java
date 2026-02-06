@@ -71,6 +71,7 @@ public class ResourceController {
                 service.getAllResourcesBySubject(subject)
         );
     }
+    //for all pdfs--> meta data
     @GetMapping("/view/all")
     public ResponseEntity<List<FacultyResourceMetaDTO>> viewAll(){
         return ResponseEntity.ok(service.getAllResources());

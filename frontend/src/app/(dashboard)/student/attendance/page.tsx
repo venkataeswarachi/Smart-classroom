@@ -58,6 +58,7 @@ export default function StudentAttendancePage() {
 
                 const statsRes = await api.get(`/student/semester/${studentSem}/percentage`);
                 setStats(statsRes.data);
+                console.log(statsRes.data);
             } catch (err) {
                 console.error("Failed to fetch initial data", err);
                 setError("Could not load attendance data.");

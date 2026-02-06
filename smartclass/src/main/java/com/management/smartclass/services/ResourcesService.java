@@ -38,18 +38,18 @@ public class ResourcesService {
         }
 
         // Base directory (change once, works everywhere)
-        Path baseDir = Paths.get("/uploads/faculty", facultyUsername);
+        Path baseDir = Paths.get(UPLOAD_DIR, facultyUsername);
 
-        // ✅ Create directories if not exists
+
         Files.createDirectories(baseDir);
 
-        // Unique stored filename
+
         String storedFilename =
                 UUID.randomUUID() + "_" + file.getOriginalFilename();
 
         Path filePath = baseDir.resolve(storedFilename);
 
-        // ✅ Copy file
+
         Files.copy(
                 file.getInputStream(),
                 filePath,
