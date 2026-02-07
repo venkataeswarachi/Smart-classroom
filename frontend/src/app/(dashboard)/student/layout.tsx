@@ -12,13 +12,15 @@ import {
     Menu,
     QrCode,
     User,
-    X
+    X,
+    FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const sidebarItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/student" },
+    { icon: FileText, label: "Resources", href: "/student/resources" },
     { icon: QrCode, label: "Scan Attendance", href: "/student/scan" },
     { icon: Calendar, label: "My Attendance", href: "/student/attendance" },
     { icon: Calendar, label: "Timetable", href: "/student/timetable" },
