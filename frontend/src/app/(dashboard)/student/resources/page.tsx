@@ -27,7 +27,7 @@ interface ResourceMeta {
     fileName: string;
     subject: string;
     fileSize: number;
-    uploadedAt: string;
+    uploadedAt: string | number[];
     uploadedBy: string;
 }
 
@@ -39,8 +39,20 @@ function formatFileSize(bytes: number): string {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
-function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString("en-US", {
+function formatDate(dateInput: string | number[]): string {
+    if (!dateInput) return "Unknown Date";
+
+    // Handle Java LocalDateTime serialized as array [yyyy, MM, dd, HH, mm, ss]
+    if (Array.isArray(dateInput)) {
+        const [year, month, day, hour = 0, minute = 0] = dateInput;
+        return new Date(year, month - 1, day, hour, minute).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric"
+        });
+    }
+
+    return new Date(dateInput).toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric"

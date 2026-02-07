@@ -32,28 +32,28 @@ export function Sidebar() {
             icon: LayoutDashboard,
             href: "/student",
             color: "text-emerald-500",
-            roles: ["ROLE_STUDENT"],
-        },
-        {
-            label: "Curriculum",
-            icon: Layers,
-            href: "/student/curriculum",
-            color: "text-emerald-500",
-            roles: ["ROLE_STUDENT"],
+            roles: ["ROLE_STUDENT", "ROLE_USER"],
         },
         {
             label: "Resources",
             icon: FileText,
             href: "/student/resources",
             color: "text-emerald-500",
-            roles: ["ROLE_STUDENT"],
+            roles: ["ROLE_STUDENT", "ROLE_USER"],
+        },
+        {
+            label: "Curriculum",
+            icon: Layers,
+            href: "/student/curriculum",
+            color: "text-emerald-500",
+            roles: ["ROLE_STUDENT", "ROLE_USER"],
         },
         {
             label: "My Timetable",
             icon: Calendar,
             href: "/student/timetable",
             color: "text-emerald-500",
-            roles: ["ROLE_STUDENT"],
+            roles: ["ROLE_STUDENT", "ROLE_USER"],
         },
 
         // Faculty Routes

@@ -25,7 +25,7 @@ interface ResourceMeta {
     fileName: string;
     subject: string;
     fileSize: number;
-    uploadedAt: string;
+    uploadedAt: string | number[];
     uploadedBy: string;
 }
 
@@ -37,8 +37,22 @@ function formatFileSize(bytes: number): string {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
-function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString("en-US", {
+function formatDate(dateInput: string | number[]): string {
+    if (!dateInput) return "Unknown Date";
+
+    if (Array.isArray(dateInput)) {
+        const [year, month, day, hour = 0, minute = 0] = dateInput;
+        // Month is 0-indexed in JS Date
+        return new Date(year, month - 1, day, hour, minute).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+    }
+
+    return new Date(dateInput).toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
