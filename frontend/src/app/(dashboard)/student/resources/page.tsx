@@ -7,18 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     Loader2,
     Search,
     ExternalLink,
     FileText,
-    BookOpen,
     Layers,
-    Download,
     Eye,
     Calendar,
-    User
+    User,
+    RefreshCw
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -42,9 +40,9 @@ function formatFileSize(bytes: number): string {
 function formatDate(dateInput: string | number[]): string {
     if (!dateInput) return "Unknown Date";
 
-    // Handle Java LocalDateTime serialized as array [yyyy, MM, dd, HH, mm, ss]
     if (Array.isArray(dateInput)) {
         const [year, month, day, hour = 0, minute = 0] = dateInput;
+        // Month is 0-indexed in JS Date
         return new Date(year, month - 1, day, hour, minute).toLocaleDateString("en-US", {
             year: "numeric",
             month: "short",
@@ -60,51 +58,76 @@ function formatDate(dateInput: string | number[]): string {
 }
 
 export default function StudentResourcesPage() {
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [searchCode, setSearchCode] = useState("");
     const [resources, setResources] = useState<ResourceMeta[]>([]);
-    const [allResources, setAllResources] = useState<ResourceMeta[]>([]);
-    const [searched, setSearched] = useState(false);
-    const [activeTab, setActiveTab] = useState("search");
+    const [filteredResources, setFilteredResources] = useState<ResourceMeta[]>([]);
 
-    const fetchAllResources = useCallback(async () => {
+    const fetchResources = useCallback(async () => {
+        setLoading(true);
         try {
             console.log("Fetching all resources...");
             const res = await api.get("/faculty/resources/all");
             console.log("Resources fetched:", res.data);
-            setAllResources(res.data);
+            if (Array.isArray(res.data)) {
+                setResources(res.data);
+                setFilteredResources(res.data);
+            } else {
+                setResources([]);
+                setFilteredResources([]);
+            }
         } catch (err) {
             console.error("Failed to fetch all resources:", err);
+            setResources([]);
+            setFilteredResources([]);
+        } finally {
+            setLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        console.log("Active tab changed:", activeTab);
-        if (activeTab === "all") {
-            fetchAllResources();
-        }
-    }, [activeTab, fetchAllResources]);
+        fetchResources();
+    }, [fetchResources]);
 
+    // Handle client-side filtering or server-side if needed.
+    // User asked to "keep search feature". 
+    // We can filter the already fetched list for instant results, 
+    // OR call the search API. 
+    // Calling the API ensures we get exact backend matches, but filtering local is faster.
+    // Let's implement Search Button to call Backend for robustness as per previous logic.
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!searchCode.trim()) return;
+        if (!searchCode.trim()) {
+            // Reset to all if empty
+            setFilteredResources(resources);
+            return;
+        }
 
         setLoading(true);
-        setSearched(true);
         try {
             const res = await api.get(`/faculty/resources/subject/${searchCode.trim()}`);
-            setResources(res.data);
+            if (Array.isArray(res.data)) {
+                setFilteredResources(res.data);
+            } else {
+                setFilteredResources([]);
+            }
         } catch (err) {
             console.error(err);
-            setResources([]);
+            setFilteredResources([]);
         } finally {
             setLoading(false);
         }
     };
 
+    // Clear search
+    const clearSearch = () => {
+        setSearchCode("");
+        setFilteredResources(resources);
+    };
+
     const handleViewPdf = async (id: number) => {
         try {
-            setLoading(true); // Show loading indicator while fetching
+            setLoading(true);
             const response = await api.get(`/faculty/resources/view/${id}`, {
                 responseType: 'blob'
             });
@@ -118,148 +141,127 @@ export default function StudentResourcesPage() {
         }
     };
 
-    const container = {
-        hidden: { opacity: 0 },
-        show: { opacity: 1, transition: { staggerChildren: 0.1 } }
-    };
-
     const item = {
         hidden: { opacity: 0, y: 15 },
         show: { opacity: 1, y: 0 }
     };
 
-    const ResourceList = ({ data, emptyMessage }: { data: ResourceMeta[], emptyMessage: string }) => (
-        <Card className="border-0 shadow-lg bg-card/60 backdrop-blur-sm ring-1 ring-border/50">
-            <CardContent className="pt-6">
-                {data.length === 0 ? (
-                    <div className="text-center py-12 opacity-60">
-                        <Layers className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
-                        <p className="text-lg font-medium">{emptyMessage}</p>
-                        <p className="text-sm text-muted-foreground">Check later for new materials.</p>
-                    </div>
-                ) : (
-                    <div className="space-y-3">
-                        {data.map((res, idx) => (
-                            <motion.div
-                                key={res.id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: idx * 0.05 }}
-                                onClick={() => handleViewPdf(res.id)}
-                                className="flex items-center justify-between p-4 rounded-xl border border-border/50 hover:border-primary/30 hover:bg-muted/30 transition-all group cursor-pointer"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
-                                        <FileText className="h-5 w-5 text-red-600" />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="font-semibold text-foreground truncate" title={res.fileName}>
-                                            {res.fileName}
-                                        </p>
-                                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                            <span className="font-mono bg-primary/10 text-primary px-2 py-0.5 rounded">
-                                                {res.subject}
-                                            </span>
-                                            <span>{formatFileSize(res.fileSize)}</span>
-                                            <span>Uploaded by {res.uploadedBy}</span>
-                                            <span>{formatDate(res.uploadedAt)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleViewPdf(res.id);
-                                        }}
-                                        className="hover:bg-blue-100 hover:text-blue-600"
-                                        title="View PDF"
-                                    >
-                                        <Eye className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    );
-
     return (
-        <motion.div
-            variants={container}
-            initial="hidden"
-            animate="show"
-            className="max-w-6xl mx-auto space-y-8 pb-10"
-        >
-            <motion.div variants={item} className="flex flex-col gap-2">
+        <div className="max-w-7xl mx-auto space-y-8 pb-10">
+            <div className="flex flex-col gap-2">
                 <h1 className="text-4xl font-black tracking-tight text-foreground">
                     Learning Resources<span className="text-primary">.</span>
                 </h1>
-                <p className="text-lg text-muted-foreground">Access study materials and PDFs shared by your faculty.</p>
-            </motion.div>
+                <p className="text-lg text-muted-foreground">Browse and download study materials uploaded by faculty.</p>
+            </div>
 
-            <Tabs defaultValue="search" className="w-full" onValueChange={setActiveTab}>
-                <motion.div variants={item}>
-                    <TabsList className="grid w-full max-w-md grid-cols-2">
-                        <TabsTrigger value="search">Search by Subject</TabsTrigger>
-                        <TabsTrigger value="all">Recent Uploads</TabsTrigger>
-                    </TabsList>
-                </motion.div>
-
-                <TabsContent value="search" className="space-y-6 mt-6">
-                    <motion.div variants={item}>
-                        <Card className="border-0 shadow-md bg-white">
-                            <CardContent className="p-6">
-                                <form onSubmit={handleSearch} className="flex gap-4 items-end">
-                                    <div className="flex-1 space-y-2">
-                                        <Label>Subject Code</Label>
-                                        <div className="relative">
-                                            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                            <Input
-                                                placeholder="Enter Subject Code (e.g. CS302)"
-                                                value={searchCode}
-                                                onChange={e => setSearchCode(e.target.value)}
-                                                className="pl-9 font-mono uppercase"
-                                            />
-                                        </div>
-                                    </div>
-                                    <Button type="submit" className="font-bold min-w-[120px]" disabled={loading}>
-                                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Find Resources"}
-                                    </Button>
-                                </form>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-
-                    <AnimatePresence mode="wait">
-                        {searched && !loading && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                            >
-                                <ResourceList
-                                    data={resources}
-                                    emptyMessage={`No resources found for "${searchCode}"`}
+            {/* Search Bar */}
+            <Card className="border-0 shadow-md bg-white">
+                <CardContent className="p-6">
+                    <form onSubmit={handleSearch} className="flex gap-4 items-end">
+                        <div className="flex-1 space-y-2">
+                            <Label>Search by Subject</Label>
+                            <div className="relative">
+                                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Enter Subject Code (e.g. CS302)"
+                                    value={searchCode}
+                                    onChange={e => setSearchCode(e.target.value)}
+                                    className="pl-9 font-mono uppercase"
                                 />
-                            </motion.div>
+                            </div>
+                        </div>
+                        <Button type="submit" className="font-bold min-w-[120px]" disabled={loading}>
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Search"}
+                        </Button>
+                        {searchCode && (
+                            <Button type="button" variant="outline" onClick={clearSearch}>
+                                Clear
+                            </Button>
                         )}
-                    </AnimatePresence>
-                </TabsContent>
+                        <Button type="button" variant="ghost" size="icon" onClick={fetchResources} title="Refresh List">
+                            <RefreshCw className={loading ? "animate-spin" : ""} />
+                        </Button>
+                    </form>
+                </CardContent>
+            </Card>
 
-                <TabsContent value="all" className="mt-6">
-                    <motion.div variants={item}>
-                        <ResourceList
-                            data={allResources}
-                            emptyMessage="No resources available yet."
-                        />
-                    </motion.div>
-                </TabsContent>
-            </Tabs>
-        </motion.div>
+            {/* Resources Grid */}
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <AnimatePresence mode="popLayout">
+                    {filteredResources.length === 0 && !loading ? (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="col-span-full text-center py-20 opacity-60"
+                        >
+                            <Layers className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                            <p className="text-xl font-medium">No resources found.</p>
+                            <p className="text-muted-foreground">Try a different subject code or check back later.</p>
+                        </motion.div>
+                    ) : (
+                        filteredResources.map((res, idx) => (
+                            <motion.div
+                                key={res.id}
+                                layout
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.2, delay: idx * 0.05 }}
+                            >
+                                <Card className="h-full hover:shadow-xl transition-all border-border/60 hover:border-primary/40 group flex flex-col bg-card/50 backdrop-blur-sm">
+                                    <CardHeader className="pb-3 relative">
+                                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Button
+                                                variant="secondary"
+                                                size="icon"
+                                                onClick={() => handleViewPdf(res.id)}
+                                                className="h-8 w-8 rounded-full shadow-sm"
+                                                title="Open PDF"
+                                            >
+                                                <ExternalLink className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center text-red-600 shadow-sm border border-red-200/50 mb-3">
+                                            <FileText className="h-6 w-6" />
+                                        </div>
+                                        <CardTitle className="leading-snug line-clamp-2 text-lg" title={res.fileName}>
+                                            {res.fileName}
+                                        </CardTitle>
+                                        <CardDescription className="flex items-center gap-2 mt-1">
+                                            <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
+                                                {res.subject}
+                                            </span>
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="mt-auto pt-0">
+                                        <div className="space-y-2 text-sm text-muted-foreground mb-4 border-t border-border/50 pt-4">
+                                            <div className="flex items-center justify-between">
+                                                <span className="flex items-center gap-1.5"><User className="h-3 w-3" /> Faculty</span>
+                                                <span className="font-medium text-foreground truncate max-w-[100px]">{res.uploadedBy}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="flex items-center gap-1.5"><Calendar className="h-3 w-3" /> Date</span>
+                                                <span>{formatDate(res.uploadedAt)}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="flex items-center gap-1.5"><Layers className="h-3 w-3" /> Size</span>
+                                                <span>{formatFileSize(res.fileSize)}</span>
+                                            </div>
+                                        </div>
+                                        <Button
+                                            onClick={() => handleViewPdf(res.id)}
+                                            className="w-full font-semibold shadow-sm"
+                                        >
+                                            <Eye className="mr-2 h-4 w-4" />
+                                            View Document
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
+                        ))
+                    )}
+                </AnimatePresence>
+            </div>
+        </div>
     );
 }
