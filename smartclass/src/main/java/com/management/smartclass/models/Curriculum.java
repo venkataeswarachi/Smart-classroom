@@ -2,24 +2,35 @@ package com.management.smartclass.models;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @Entity
 public class Curriculum {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    private String subjectName;
-    private String subjectCode;
-    private String dept;
+    private int year;
     private int semester;
-
-    @Column(length = 2000)
-    private String description;
-
-    // For recommendation engine context
-    private String technologies;
-
+    private String fileName;
+    private String fileType;
+    private String filePath;
+    private Long fileSize;
+    private LocalDateTime uploadAt;
+    private String uploadedBy;
     public Curriculum() {
+    }
+
+    public Curriculum(Long id, int year, int semester, String fileName, String fileType, String filePath, Long fileSize, LocalDateTime uploadAt,String uploadedBy) {
+        this.id = id;
+        this.year = year;
+        this.semester = semester;
+        this.fileName = fileName;
+        this.fileType = fileType;
+        this.filePath = filePath;
+        this.fileSize = fileSize;
+        this.uploadAt = uploadAt;
+        this.uploadedBy = uploadedBy;
     }
 
     public Long getId() {
@@ -30,28 +41,12 @@ public class Curriculum {
         this.id = id;
     }
 
-    public String getSubjectName() {
-        return subjectName;
+    public int getYear() {
+        return year;
     }
 
-    public void setSubjectName(String subjectName) {
-        this.subjectName = subjectName;
-    }
-
-    public String getSubjectCode() {
-        return subjectCode;
-    }
-
-    public void setSubjectCode(String subjectCode) {
-        this.subjectCode = subjectCode;
-    }
-
-    public String getDept() {
-        return dept;
-    }
-
-    public void setDept(String dept) {
-        this.dept = dept;
+    public void setYear(int year) {
+        this.year = year;
     }
 
     public int getSemester() {
@@ -62,19 +57,51 @@ public class Curriculum {
         this.semester = semester;
     }
 
-    public String getDescription() {
-        return description;
+    public String getFileName() {
+        return fileName;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 
-    public String getTechnologies() {
-        return technologies;
+    public String getFileType() {
+        return fileType;
     }
 
-    public void setTechnologies(String technologies) {
-        this.technologies = technologies;
+    public void setFileType(String fileType) {
+        this.fileType = fileType;
+    }
+
+    public String getFilePath() {
+        return filePath;
+    }
+
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
+    }
+
+    public Long getFileSize() {
+        return fileSize;
+    }
+
+    public void setFileSize(Long fileSize) {
+        this.fileSize = fileSize;
+    }
+
+    public LocalDateTime getUploadAt() {
+        return uploadAt;
+    }
+
+    public void setUploadAt(LocalDateTime uploadAt) {
+        this.uploadAt = uploadAt;
+    }
+
+    public String getUploadedBy() {
+        return uploadedBy;
+    }
+
+    public void setUploadedBy(String uploadedBy) {
+        this.uploadedBy = uploadedBy;
     }
 }

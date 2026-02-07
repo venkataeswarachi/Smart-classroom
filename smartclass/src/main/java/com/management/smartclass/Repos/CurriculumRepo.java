@@ -8,7 +8,5 @@ import java.util.List;
 
 @Repository
 public interface CurriculumRepo extends JpaRepository<Curriculum, Long> {
-    List<Curriculum> findByDeptAndSemester(String dept, int semester);
 
-    List<Curriculum> findBySubjectCode(String subjectCode);
 }
