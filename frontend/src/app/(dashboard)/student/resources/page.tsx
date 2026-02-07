@@ -69,7 +69,9 @@ export default function StudentResourcesPage() {
 
     const fetchAllResources = useCallback(async () => {
         try {
-            const res = await api.get("/faculty/resources/view/all");
+            console.log("Fetching all resources...");
+            const res = await api.get("/faculty/resources/all");
+            console.log("Resources fetched:", res.data);
             setAllResources(res.data);
         } catch (err) {
             console.error("Failed to fetch all resources:", err);
@@ -77,6 +79,7 @@ export default function StudentResourcesPage() {
     }, []);
 
     useEffect(() => {
+        console.log("Active tab changed:", activeTab);
         if (activeTab === "all") {
             fetchAllResources();
         }
