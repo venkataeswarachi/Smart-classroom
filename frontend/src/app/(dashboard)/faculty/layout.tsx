@@ -13,7 +13,8 @@ import {
     QrCode,
     User,
     Users,
-    X
+    X,
+    Bot
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,7 @@ const sidebarItems = [
     { icon: Users, label: "Attendance", href: "/faculty/attendance" },
     { icon: Calendar, label: "Timetable", href: "/faculty/timetable" },
     { icon: BookOpen, label: "Resources", href: "/faculty/resources" },
+    { icon: Bot, label: "AI Assistant", href: "/faculty/ai-assistant" },
     { icon: User, label: "Profile", href: "/faculty/profile" },
 ];
 

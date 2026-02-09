@@ -16,7 +16,8 @@ import {
     LogOut,
     Shield,
     Layers,
-    Upload
+    Upload,
+    Bot
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -39,6 +40,13 @@ export function Sidebar() {
             icon: FileText,
             href: "/student/resources",
             color: "text-emerald-500",
+            roles: ["ROLE_STUDENT", "ROLE_USER"],
+        },
+        {
+            label: "AI Assistant",
+            icon: Bot,
+            href: "/student/ai-assistant",
+            color: "text-violet-500",
             roles: ["ROLE_STUDENT", "ROLE_USER"],
         },
         {
@@ -76,6 +84,13 @@ export function Sidebar() {
             icon: Upload,
             href: "/faculty/resources",
             color: "text-blue-500",
+            roles: ["ROLE_FACULTY"],
+        },
+        {
+            label: "AI Assistant",
+            icon: Bot,
+            href: "/faculty/ai-assistant",
+            color: "text-violet-500",
             roles: ["ROLE_FACULTY"],
         },
         {
