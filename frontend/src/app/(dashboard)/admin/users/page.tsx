@@ -117,9 +117,9 @@ export default function AdminUsersPage() {
                             <Label className="text-sm uppercase tracking-wider text-muted-foreground font-semibold">Step 1: Select Role</Label>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 {[
-                                    { value: "ROLE_STUDENT", label: "Students", icon: GraduationCap },
-                                    { value: "ROLE_FACULTY", label: "Faculty", icon: Users },
-                                    { value: "ROLE_DEPT_ADMIN", label: "Dept Admin", icon: School },
+                                    { value: "STUDENT", label: "Students", icon: GraduationCap },
+                                    { value: "FACULTY", label: "Faculty", icon: Users },
+                                    { value: "DEO", label: "Dept Admin", icon: School },
                                 ].map((option) => (
                                     <div
                                         key={option.value}

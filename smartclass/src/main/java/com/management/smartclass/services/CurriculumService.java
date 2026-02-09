@@ -15,6 +15,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -50,6 +51,8 @@ public class CurriculumService {
                 StandardCopyOption.REPLACE_EXISTING
         );
         Curriculum curriculum = new Curriculum();
+        curriculum.setSemester(semester);
+        curriculum.setYear(year);
         curriculum.setFileName(file.getOriginalFilename());
         curriculum.setFileType(file.getContentType());
         curriculum.setFilePath(filePath.toAbsolutePath().toString());
@@ -58,5 +61,10 @@ public class CurriculumService {
         curriculum.setUploadAt(LocalDateTime.now());
         curriculumRepo.save(curriculum);
         return "Uploaded Successfully.";
+    }
+
+    public Curriculum getCurriculum(int year,int semester){
+        Curriculum curriculum = curriculumRepo.findByYearAndSemester(year,semester).orElse(new Curriculum());
+        return curriculum;
     }
 }

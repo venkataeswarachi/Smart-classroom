@@ -21,7 +21,7 @@ export default function StudentCurriculumPage() {
                 setProfile(profileRes.data);
 
                 // 2. Get Curriculum
-                const res = await api.get(`/curriculum/student/view?dept=${profileRes.data.dept}&semester=${profileRes.data.semester}`);
+                const res = await api.get(`/curriculum/view?year=${profileRes.data.dept}&semester=${profileRes.data.semester}`);
                 setCurriculum(res.data);
             } catch (err) {
                 console.error("Failed to fetch curriculum", err);
