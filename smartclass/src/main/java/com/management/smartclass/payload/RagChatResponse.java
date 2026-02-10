@@ -1,11 +1,13 @@
 package com.management.smartclass.payload;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public class RagChatResponse {
     private String query;
     private String answer;
     private List<RagSource> sources;
+    @JsonProperty("source_count")
     private int sourceCount;
 
     public RagChatResponse() {
@@ -52,13 +54,14 @@ public class RagChatResponse {
 
     public static class RagSource {
         private String source;
-        private String page;
+        private Object page;
+        @JsonProperty("similarity_score")
         private double similarityScore;
 
         public RagSource() {
         }
 
-        public RagSource(String source, String page, double similarityScore) {
+        public RagSource(String source, Object page, double similarityScore) {
             this.source = source;
             this.page = page;
             this.similarityScore = similarityScore;
@@ -72,11 +75,11 @@ public class RagChatResponse {
             this.source = source;
         }
 
-        public String getPage() {
-            return page;
+        public Object getPage() {
+            return page != null ? String.valueOf(page) : "N/A";
         }
 
-        public void setPage(String page) {
+        public void setPage(Object page) {
             this.page = page;
         }
 

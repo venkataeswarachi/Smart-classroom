@@ -1,8 +1,12 @@
 package com.management.smartclass.payload;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class RagStatusResponse {
     private String status;
+    @JsonProperty("documents_in_store")
     private int documentsInStore;
+    @JsonProperty("collection_name")
     private String collectionName;
 
     public RagStatusResponse() {

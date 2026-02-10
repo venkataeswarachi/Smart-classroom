@@ -1,7 +1,6 @@
 "use client";
 
 import { RagChatbot } from "@/components/RagChatbot";
-import { Bot } from "lucide-react";
 
 export default function StudentAIAssistantPage() {
     return (
