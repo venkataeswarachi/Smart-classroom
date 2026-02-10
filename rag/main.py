@@ -179,7 +179,7 @@ def rag_pipeline(request: RAGRequest):
     if not llm:
         raise HTTPException(
             status_code=503,
-            detail="LLM not initialized. Set GROQ_API_KEY environment variable.",
+            detail="llm not initialized. Set GROQ_API_KEY environment variable.",
         )
     
     try:

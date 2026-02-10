@@ -16,6 +16,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+
 @Service
 public class ResourcesService {
     private static final String UPLOAD_DIR = "uploads/faculty/";
@@ -23,11 +24,13 @@ public class ResourcesService {
     @Autowired
     private FacultyResourceRepo repository;
 
+    @Autowired
+    private RagService ragService;
+
     public FacultyResource uploadPdf(
             MultipartFile file,
             String subject,
-            String facultyUsername
-    ) throws IOException {
+            String facultyUsername) throws IOException {
 
         if (file.isEmpty()) {
             throw new RuntimeException("File is empty");
@@ -40,21 +43,16 @@ public class ResourcesService {
         // Base directory (change once, works everywhere)
         Path baseDir = Paths.get(UPLOAD_DIR, facultyUsername);
 
-
         Files.createDirectories(baseDir);
 
-
-        String storedFilename =
-                UUID.randomUUID() + "_" + file.getOriginalFilename();
+        String storedFilename = UUID.randomUUID() + "_" + file.getOriginalFilename();
 
         Path filePath = baseDir.resolve(storedFilename);
-
 
         Files.copy(
                 file.getInputStream(),
                 filePath,
-                StandardCopyOption.REPLACE_EXISTING
-        );
+                StandardCopyOption.REPLACE_EXISTING);
 
         // Save metadata
         FacultyResource resource = new FacultyResource();
@@ -66,7 +64,12 @@ public class ResourcesService {
         resource.setUploadedBy(facultyUsername);
         resource.setUploadedAt(LocalDateTime.now());
 
-        return repository.save(resource);
+        FacultyResource savedResource = repository.save(resource);
+
+        // Trigger RAG ingestion asynchronously
+        ragService.ingestDocumentAsync(filePath.toAbsolutePath().toString());
+
+        return savedResource;
     }
 
     public List<FacultyResourceMetaDTO> getMyResourceMetadata(String faculty) {
@@ -85,11 +88,11 @@ public class ResourcesService {
                 .toList();
     }
 
-
     public FacultyResource getResourceById(Long id) {
         return repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("File not found"));
     }
+
     public List<FacultyResourceMetaDTO> getAllResourcesBySubject(String subject) {
         return repository.findBySubjectIgnoreCase(subject)
                 .stream()
@@ -105,10 +108,11 @@ public class ResourcesService {
                 })
                 .toList();
     }
-    public List<FacultyResourceMetaDTO> getAllResources(){
+
+    public List<FacultyResourceMetaDTO> getAllResources() {
         return repository.findAll()
                 .stream()
-                .map(r->{
+                .map(r -> {
                     FacultyResourceMetaDTO dto = new FacultyResourceMetaDTO();
                     dto.setId(r.getId());
                     dto.setFileName(r.getFileName());
