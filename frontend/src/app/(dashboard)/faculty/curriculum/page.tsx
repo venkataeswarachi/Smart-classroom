@@ -18,7 +18,7 @@ const item = {
     show: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 };
 
-export default function StudentCurriculumPage() {
+export default function FacultyCurriculumPage() {
     const [year, setYear] = useState(1);
     const [semester, setSemester] = useState(1);
     const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -64,16 +64,16 @@ export default function StudentCurriculumPage() {
                     Curriculum<span className="text-primary">.</span>
                 </h1>
                 <p className="text-lg text-muted-foreground">
-                    View your semester curriculum documents uploaded by the department.
+                    View the official curriculum documents for each year and semester.
                 </p>
             </motion.div>
 
             {/* ─── Selector & Viewer ──────────────────────── */}
             <motion.div variants={item}>
                 <Card className="border-0 shadow-xl bg-card/50 backdrop-blur-sm ring-1 ring-black/5 overflow-hidden">
-                    <CardHeader className="bg-gradient-to-r from-emerald-500/5 to-teal-500/5">
+                    <CardHeader className="bg-gradient-to-r from-blue-500/5 to-cyan-500/5">
                         <CardTitle className="text-lg flex items-center gap-2">
-                            <FileText className="h-5 w-5 text-emerald-500" />
+                            <FileText className="h-5 w-5 text-blue-500" />
                             Curriculum Document
                         </CardTitle>
                     </CardHeader>

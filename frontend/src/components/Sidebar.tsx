@@ -94,6 +94,13 @@ export function Sidebar() {
             roles: ["ROLE_FACULTY"],
         },
         {
+            label: "Curriculum",
+            icon: BookOpen,
+            href: "/faculty/curriculum",
+            color: "text-blue-500",
+            roles: ["ROLE_FACULTY"],
+        },
+        {
             label: "Timetable",
             icon: Calendar,
             href: "/faculty/timetable",
