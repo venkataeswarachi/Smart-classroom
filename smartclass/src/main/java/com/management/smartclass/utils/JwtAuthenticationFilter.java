@@ -1,6 +1,5 @@
 package com.management.smartclass.utils;
 
-
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -30,8 +29,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
-            FilterChain filterChain
-    ) throws ServletException, IOException {
+            FilterChain filterChain) throws ServletException, IOException {
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             response.setStatus(HttpServletResponse.SC_OK);
             filterChain.doFilter(request, response);
@@ -42,7 +40,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = null;
         String email = null;
 
-        //Extract token
+        // Extract token
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
             try {
@@ -50,33 +48,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 email = claims.getSubject();
             } catch (Exception e) {
                 // Invalid token → continue without authentication
+                System.out.println("❌ JWT Validation Failed: " + e.getMessage());
                 filterChain.doFilter(request, response);
                 return;
             }
         }
 
-        //Authenticate user
+        // Authenticate user
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            UserDetails userDetails =
-                    userDetailsService.loadUserByUsername(email);
+            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
-                    );
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                    userDetails,
+                    null,
+                    userDetails.getAuthorities());
 
             authentication.setDetails(
-                    new WebAuthenticationDetailsSource().buildDetails(request)
-            );
+                    new WebAuthenticationDetailsSource().buildDetails(request));
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
+            System.out.println("✅ User Authenticated: " + email + " with roles: " + userDetails.getAuthorities());
         }
 
-        //Continue filter chain
+        // Continue filter chain
         filterChain.doFilter(request, response);
     }
 }
-
