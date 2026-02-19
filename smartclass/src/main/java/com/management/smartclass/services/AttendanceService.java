@@ -10,7 +10,9 @@ import com.management.smartclass.models.Students;
 import com.management.smartclass.models.TimeTableSlot;
 import com.management.smartclass.payload.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -36,7 +38,12 @@ public class AttendanceService {
         public String markAttendance(String token, String studentEmail) {
 
                 QrSession qr = qrRepo.findByToken(token)
-                                .orElseThrow(() -> new RuntimeException("Invalid QR"));
+                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired QR code"));
+
+                if (qr.getExpiresAt().isBefore(LocalDateTime.now())) {
+                        throw new ResponseStatusException(HttpStatus.GONE, "QR code has expired. Ask your faculty to generate a new one.");
+                }
+
                 boolean alreadyMarked = attendanceRepo.existsByStudentEmailAndSubjectCodeAndDateAndStartTime(
                                 studentEmail,
                                 qr.getSubjectCode(),
@@ -44,11 +51,7 @@ public class AttendanceService {
                                 qr.getStartTime());
 
                 if (alreadyMarked) {
-                        throw new RuntimeException("Attendance already marked for this period");
-                }
-
-                if (qr.getExpiresAt().isBefore(LocalDateTime.now())) {
-                        throw new RuntimeException("QR expired");
+                        throw new ResponseStatusException(HttpStatus.CONFLICT, "Attendance already marked for this period");
                 }
 
                 Attendance att = new Attendance();
@@ -209,7 +212,7 @@ public class AttendanceService {
 
         // ---------------- MANUAL & CLASS ATTENDANCE ----------------
         public String manualAttendance(String studentEmail, String subjectCode, LocalDate date, LocalTime startTime,
-                        boolean present) {
+                        boolean present, String facultyEmail) {
 
                 java.util.Optional<Attendance> existing = attendanceRepo
                                 .findByStudentEmailAndSubjectCodeAndDateAndStartTime(
@@ -223,13 +226,24 @@ public class AttendanceService {
                 }
 
                 Students student = studentRepo.findByEmail(studentEmail)
-                                .orElseThrow(() -> new RuntimeException("Student not found"));
+                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student not found: " + studentEmail));
+
+                // Look up the timetable slot to fill in subjectName and endTime
+                List<TimeTableSlot> slots = timeTableRepo.findByDeptAndSectionAndSemesterAndDayOrderByStartTime(
+                                student.getDept(), student.getSection(), student.getSemester(),
+                                date.getDayOfWeek().name());
+                TimeTableSlot matchedSlot = slots.stream()
+                                .filter(s -> s.getSubjectCode().equals(subjectCode) && s.getStartTime().equals(startTime))
+                                .findFirst().orElse(null);
 
                 Attendance att = new Attendance();
                 att.setStudentEmail(studentEmail);
                 att.setSubjectCode(subjectCode);
+                att.setSubjectName(matchedSlot != null ? matchedSlot.getSubjectName() : subjectCode);
+                att.setFacultyEmail(facultyEmail);
                 att.setDate(date);
                 att.setStartTime(startTime);
+                att.setEndTime(matchedSlot != null ? matchedSlot.getEndTime() : null);
                 att.setPresent(present);
 
                 att.setDept(student.getDept());

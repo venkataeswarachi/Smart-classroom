@@ -11,13 +11,14 @@ public class FacultyPeriodDTO {
 
     private String dept;
     private String section;
+    private int semester;
 
     private boolean isBreak;
 
     public FacultyPeriodDTO() {
     }
 
-    public FacultyPeriodDTO(String day, String startTime, String endTime, String subjectCode, String subjectName, String dept, String section, boolean isBreak) {
+    public FacultyPeriodDTO(String day, String startTime, String endTime, String subjectCode, String subjectName, String dept, String section, int semester, boolean isBreak) {
         this.day = day;
         this.startTime = startTime;
         this.endTime = endTime;
@@ -25,6 +26,7 @@ public class FacultyPeriodDTO {
         this.subjectName = subjectName;
         this.dept = dept;
         this.section = section;
+        this.semester = semester;
         this.isBreak = isBreak;
     }
 
@@ -90,6 +92,14 @@ public class FacultyPeriodDTO {
 
     public void setBreak(boolean aBreak) {
         isBreak = aBreak;
+    }
+
+    public int getSemester() {
+        return semester;
+    }
+
+    public void setSemester(int semester) {
+        this.semester = semester;
     }
 }
 

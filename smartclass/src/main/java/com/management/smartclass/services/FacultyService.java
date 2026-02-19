@@ -75,6 +75,7 @@ public class FacultyService {
             dto.setSubjectName(slot.getSubjectName());
             dto.setDept(slot.getDept());
             dto.setSection(slot.getSection());
+            dto.setSemester(slot.getSemester());
             dto.setBreak(slot.isBreak());
 
             return dto;

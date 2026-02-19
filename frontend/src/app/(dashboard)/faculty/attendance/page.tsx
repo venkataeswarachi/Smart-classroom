@@ -22,6 +22,22 @@ function AttendanceMonitorContent() {
     const [loading, setLoading] = useState(false);
     const [autoRefresh, setAutoRefresh] = useState(false);
     const [newEmail, setNewEmail] = useState("");
+    const [todayClasses, setTodayClasses] = useState<any[]>([]);
+
+    // Load today's classes for quick selection
+    useEffect(() => {
+        api.get("/faculty/today")
+            .then(res => setTodayClasses(res.data?.filter((c: any) => !c.break) || []))
+            .catch(() => {});
+    }, []);
+
+    // Normalize time to HH:mm:ss
+    const normalizeTime = (time: string) => {
+        if (!time) return time;
+        const parts = time.split(":");
+        if (parts.length === 2) return time + ":00";
+        return time;
+    };
 
     // Fetch Attendance
     const fetchAttendance = useCallback(async () => {
@@ -31,7 +47,7 @@ function AttendanceMonitorContent() {
         if (!autoRefresh) setLoading(true);
 
         try {
-            const res = await api.get(`/faculty/attendance/monitor?subjectCode=${subjectCode}&date=${date}&startTime=${startTime}`);
+            const res = await api.get(`/faculty/attendance/monitor?subjectCode=${subjectCode}&date=${date}&startTime=${normalizeTime(startTime)}`);
             setStudents(res.data);
         } catch (err) {
             console.error(err);
@@ -40,12 +56,12 @@ function AttendanceMonitorContent() {
         }
     }, [subjectCode, date, startTime, autoRefresh]);
 
-    // Initial Load & Auto Refresh Effect
+    // Auto-load when URL params are present
     useEffect(() => {
         if (subjectCode && date && startTime) {
             fetchAttendance();
         }
-    }, []); // Run once on mount if params exist
+    }, [subjectCode, date, startTime]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -144,7 +160,35 @@ function AttendanceMonitorContent() {
                             Session Details
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="pt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                    <CardContent className="pt-4 space-y-4">
+                        {/* Quick Select from Today's Classes */}
+                        {todayClasses.length > 0 && (
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Quick Select — Today's Classes</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {todayClasses.map((cls: any, idx: number) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => {
+                                                setSubjectCode(cls.subjectCode);
+                                                setDate(new Date().toISOString().split("T")[0]);
+                                                setStartTime(normalizeTime(cls.startTime));
+                                            }}
+                                            className={cn(
+                                                "text-xs px-3 py-1.5 rounded-full border transition-all font-medium",
+                                                subjectCode === cls.subjectCode && startTime === normalizeTime(cls.startTime)
+                                                    ? "bg-primary text-primary-foreground border-primary"
+                                                    : "bg-muted/50 text-foreground border-border hover:bg-muted hover:border-primary/30"
+                                            )}
+                                        >
+                                            {cls.subjectName} ({cls.startTime?.substring(0, 5)} - {cls.section})
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Subject Code</label>
                             <Input
@@ -177,6 +221,7 @@ function AttendanceMonitorContent() {
                                     <Search className="h-4 w-4" />
                                 </Button>
                             </div>
+                        </div>
                         </div>
                     </CardContent>
                 </Card>

@@ -7,8 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { QrCode, Copy } from "lucide-react";
-// Removed QRCodeSVG import as it requires a package install, using API image fallback for now.
+import { QrCode, Copy, ExternalLink } from "lucide-react";
+import Link from "next/link";
 
 export default function GenerateQRPage() {
     const [classes, setClasses] = useState<any[]>([]);
@@ -16,6 +16,7 @@ export default function GenerateQRPage() {
     const [duration, setDuration] = useState("10"); // minutes
     const [qrToken, setQrToken] = useState("");
     const [loading, setLoading] = useState(false);
+    const [copied, setCopied] = useState(false);
 
     useEffect(() => {
         // Load today's classes to easier select
@@ -23,6 +24,14 @@ export default function GenerateQRPage() {
             .then(res => setClasses(res.data))
             .catch(err => console.error(err));
     }, []);
+
+    // Normalize time to HH:mm:ss format
+    const normalizeTime = (time: string) => {
+        if (!time) return time;
+        const parts = time.split(":");
+        if (parts.length === 2) return time + ":00";
+        return time;
+    };
 
     const handleGenerate = async () => {
         if (!selectedClassIndex) return;
@@ -36,8 +45,8 @@ export default function GenerateQRPage() {
                 dept: cls.dept,
                 section: cls.section,
                 semester: cls.semester,
-                startTime: cls.startTime + ":00", // "09:00" -> "09:00:00"
-                endTime: cls.endTime + ":00"
+                startTime: normalizeTime(cls.startTime),
+                endTime: normalizeTime(cls.endTime)
             });
             setQrToken(res.data); // Returns the token string
         } catch (err) {
@@ -46,6 +55,14 @@ export default function GenerateQRPage() {
             setLoading(false);
         }
     };
+
+    const copyToken = () => {
+        navigator.clipboard.writeText(qrToken);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    const selectedClass = selectedClassIndex ? classes[parseInt(selectedClassIndex)] : null;
 
     return (
         <div className="max-w-2xl mx-auto space-y-6">
@@ -74,9 +91,9 @@ export default function GenerateQRPage() {
                                     <SelectValue placeholder="-- Choose Class --" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {classes.map((cls, idx) => (
-                                        <SelectItem key={idx} value={String(idx)}>
-                                            {cls.subjectName} ({cls.startTime} - {cls.section})
+                                    {classes.filter(c => !c.break).map((cls, idx) => (
+                                        <SelectItem key={idx} value={String(classes.indexOf(cls))}>
+                                            {cls.subjectName} ({cls.startTime?.substring(0, 5)} - {cls.section})
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -116,9 +133,25 @@ export default function GenerateQRPage() {
                                 </div>
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500 font-mono mb-2 break-all">{qrToken}</p>
+                                <div className="flex items-center justify-center gap-2 mb-2">
+                                    <p className="text-xs text-gray-500 font-mono break-all max-w-[200px] truncate">{qrToken}</p>
+                                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={copyToken}>
+                                        <Copy className="h-3.5 w-3.5" />
+                                    </Button>
+                                </div>
+                                {copied && <p className="text-xs text-green-600 font-medium">Copied!</p>}
                                 <p className="font-medium text-lg text-primary">Scan to Mark Present</p>
                             </div>
+
+                            {selectedClass && (
+                                <Link
+                                    href={`/faculty/attendance?subject=${selectedClass.subjectCode}&date=${new Date().toISOString().split("T")[0]}&start=${normalizeTime(selectedClass.startTime)}`}
+                                    className="inline-flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-lg transition-colors"
+                                >
+                                    <ExternalLink className="h-4 w-4" />
+                                    View Live Attendance
+                                </Link>
+                            )}
                         </div>
                     ) : (
                         <div className="text-center text-muted-foreground p-6">

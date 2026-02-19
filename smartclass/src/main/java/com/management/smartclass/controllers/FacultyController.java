@@ -61,14 +61,16 @@ public class FacultyController {
 
         @PostMapping("/attendance/manual")
         public ResponseEntity<String> manualAttendance(
-                        @RequestBody com.management.smartclass.payload.ManualAttendanceDTO dto) {
+                        @RequestBody com.management.smartclass.payload.ManualAttendanceDTO dto,
+                        Authentication auth) {
                 return ResponseEntity.ok(
                                 attendanceService.manualAttendance(
                                                 dto.getStudentEmail(),
                                                 dto.getSubjectCode(),
                                                 java.time.LocalDate.parse(dto.getDate()),
                                                 java.time.LocalTime.parse(dto.getStartTime()),
-                                                dto.isPresent()));
+                                                dto.isPresent(),
+                                                auth.getName()));
         }
 
         @GetMapping("/attendance/monitor")
