@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import api from "@/lib/api";
 import { API_BASE_URL } from "@/lib/constants";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
     Loader2, Upload, FileText, BookOpen, Brain, Sparkles,
     CheckCircle2, AlertTriangle, TrendingUp, Target, Lightbulb,
-    BarChart3, ArrowRight
+    BarChart3, ArrowRight, Globe, GraduationCap, Award, FlaskConical,
+    Wrench, Zap, RefreshCw
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,39 @@ interface CurriculumInsight {
     strengths: string[];
     recommendations: string[];
     industry_trends: string[];
+    summary: string;
+}
+
+interface TrendingTech {
+    name: string;
+    description: string;
+    demand_level: string;
+}
+
+interface SuggestedSubject {
+    name: string;
+    type: string;
+    semester_fit: string;
+    reason: string;
+}
+
+interface SuggestedLab {
+    name: string;
+    tools: string[];
+    description: string;
+}
+
+interface IndustryCert {
+    name: string;
+    provider: string;
+    relevance: string;
+}
+
+interface IndustryInsights {
+    trending_technologies: TrendingTech[];
+    suggested_subjects: SuggestedSubject[];
+    suggested_labs: SuggestedLab[];
+    industry_certifications: IndustryCert[];
     summary: string;
 }
 
@@ -60,10 +94,57 @@ export default function DEOCurriculumPage() {
     const [loadingPdf, setLoadingPdf] = useState(false);
     const [pdfError, setPdfError] = useState("");
 
-    // Insights state
+    // Insights state (per-PDF analysis)
     const [insights, setInsights] = useState<CurriculumInsight | null>(null);
     const [analyzingInsights, setAnalyzingInsights] = useState(false);
     const [insightError, setInsightError] = useState("");
+
+    // Industry AI insights state (standalone, uses Groq compound-beta with web search)
+    const [department, setDepartment] = useState<string>("");
+    const [industryInsights, setIndustryInsights] = useState<IndustryInsights | null>(null);
+    const [fetchingIndustry, setFetchingIndustry] = useState(false);
+    const [industryError, setIndustryError] = useState("");
+
+    // Fetch DEO's department on mount
+    useEffect(() => {
+        (async () => {
+            try {
+                const res = await api.get("/deo/my-dept");
+                if (res.data?.department) setDepartment(res.data.department);
+            } catch {
+                // Fallback: leave empty, user can type
+            }
+        })();
+    }, []);
+
+    /* ── Industry AI Insights handler ───────────────────── */
+    const handleFetchIndustryInsights = useCallback(async () => {
+        if (!department.trim()) return;
+        setFetchingIndustry(true);
+        setIndustryError("");
+        setIndustryInsights(null);
+
+        try {
+            const res = await fetch("http://localhost:8000/curriculum/industry-insights", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ department: department.trim() }),
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => null);
+                throw new Error(err?.detail || "Failed to fetch industry insights.");
+            }
+
+            const data: IndustryInsights = await res.json();
+            setIndustryInsights(data);
+        } catch (err: any) {
+            console.error(err);
+            setIndustryError(err?.message || "Failed to fetch industry insights.");
+        } finally {
+            setFetchingIndustry(false);
+        }
+    }, [department]);
 
     /* ── Upload handler ─────────────────────────────────── */
     const handleUpload = async (e: React.FormEvent) => {
@@ -188,6 +269,216 @@ export default function DEOCurriculumPage() {
                 <p className="text-lg text-muted-foreground">
                     Upload, preview, and get AI-powered insights on your curriculum documents.
                 </p>
+            </motion.div>
+
+            {/* ─── AI Industry Insights Section ────────────── */}
+            <motion.div variants={item}>
+                <Card className="border-0 shadow-xl bg-gradient-to-br from-violet-50/60 to-indigo-50/60 dark:from-violet-950/20 dark:to-indigo-950/20 ring-1 ring-violet-200/50 overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-violet-500/10 to-indigo-500/10 border-b border-violet-200/30">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                            <Globe className="h-5 w-5 text-violet-500" />
+                            AI Industry Insights
+                            <span className="ml-2 text-xs font-medium px-2 py-0.5 rounded-full bg-violet-100 text-violet-600 border border-violet-200">
+                                Powered by Groq
+                            </span>
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-6 space-y-5">
+                        <p className="text-sm text-muted-foreground">
+                            Get real-time insights on trending technologies, suggested subjects & labs to make your <strong>{department || "department"}</strong> curriculum industry-ready.
+                        </p>
+
+                        <div className="flex flex-wrap items-end gap-4">
+                            <div className="space-y-2 flex-1 min-w-[200px] max-w-xs">
+                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Department</Label>
+                                <Input
+                                    value={department}
+                                    onChange={e => setDepartment(e.target.value)}
+                                    placeholder="e.g. CSE, ECE, IT"
+                                    className="bg-white/80 font-semibold"
+                                />
+                            </div>
+                            <Button
+                                onClick={handleFetchIndustryInsights}
+                                disabled={fetchingIndustry || !department.trim()}
+                                className="font-bold shadow-lg shadow-violet-500/20 transition-all hover:scale-105 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700"
+                            >
+                                {fetchingIndustry
+                                    ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Analyzing Industry…</>
+                                    : <><Zap className="h-4 w-4 mr-2" />Get Industry Insights</>
+                                }
+                            </Button>
+                            {industryInsights && (
+                                <Button variant="ghost" size="icon" onClick={handleFetchIndustryInsights} title="Refresh">
+                                    <RefreshCw className={cn("h-4 w-4", fetchingIndustry && "animate-spin")} />
+                                </Button>
+                            )}
+                        </div>
+
+                        {industryError && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-3"
+                            >
+                                <AlertTriangle className="h-4 w-4 shrink-0" />
+                                {industryError}
+                            </motion.div>
+                        )}
+
+                        {/* Loading state */}
+                        {fetchingIndustry && !industryInsights && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="py-12 flex flex-col items-center gap-4"
+                            >
+                                <div className="relative">
+                                    <div className="absolute inset-0 animate-ping rounded-full bg-violet-400/20" />
+                                    <Globe className="h-10 w-10 text-violet-500 animate-pulse relative" />
+                                </div>
+                                <p className="text-lg font-semibold text-violet-700 dark:text-violet-300">
+                                    Searching the web for industry trends…
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                    Using Groq compound model with real-time web search
+                                </p>
+                            </motion.div>
+                        )}
+
+                        {/* Industry Insights Results */}
+                        <AnimatePresence>
+                            {industryInsights && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.5 }}
+                                    className="space-y-6"
+                                >
+                                    {/* Summary */}
+                                    <div className="rounded-xl border border-violet-200 bg-white/70 p-5">
+                                        <div className="flex items-start gap-3">
+                                            <Sparkles className="h-5 w-5 text-violet-500 mt-0.5 shrink-0" />
+                                            <p className="text-sm leading-relaxed text-foreground/90">{industryInsights.summary}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Trending Technologies */}
+                                    {industryInsights.trending_technologies?.length > 0 && (
+                                        <div className="rounded-xl border border-border/60 bg-card p-5 space-y-4">
+                                            <div className="flex items-center gap-2">
+                                                <TrendingUp className="h-5 w-5 text-orange-500" />
+                                                <h3 className="font-bold text-base">Trending Technologies</h3>
+                                                <span className="ml-auto text-xs font-mono text-muted-foreground">{industryInsights.trending_technologies.length}</span>
+                                            </div>
+                                            <div className="grid gap-3 sm:grid-cols-2">
+                                                {industryInsights.trending_technologies.map((tech, i) => (
+                                                    <div key={i} className="flex items-start gap-3 p-3 rounded-lg border border-border/40 bg-muted/20 hover:bg-muted/40 transition-colors">
+                                                        <div className="h-8 w-8 rounded-lg bg-orange-100 flex items-center justify-center shrink-0 mt-0.5">
+                                                            <Zap className="h-4 w-4 text-orange-600" />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                <span className="font-semibold text-sm">{tech.name}</span>
+                                                                <span className={cn(
+                                                                    "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-full border",
+                                                                    tech.demand_level === "High"
+                                                                        ? "bg-red-50 text-red-600 border-red-200"
+                                                                        : tech.demand_level === "Rising"
+                                                                            ? "bg-amber-50 text-amber-600 border-amber-200"
+                                                                            : "bg-blue-50 text-blue-600 border-blue-200"
+                                                                )}>{tech.demand_level}</span>
+                                                            </div>
+                                                            <p className="text-xs text-muted-foreground mt-0.5">{tech.description}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="grid gap-6 md:grid-cols-2">
+                                        {/* Suggested Subjects */}
+                                        {industryInsights.suggested_subjects?.length > 0 && (
+                                            <div className="rounded-xl border border-border/60 bg-card p-5 space-y-4">
+                                                <div className="flex items-center gap-2">
+                                                    <GraduationCap className="h-5 w-5 text-blue-500" />
+                                                    <h3 className="font-bold text-base">Suggested Subjects</h3>
+                                                    <span className="ml-auto text-xs font-mono text-muted-foreground">{industryInsights.suggested_subjects.length}</span>
+                                                </div>
+                                                <div className="space-y-3">
+                                                    {industryInsights.suggested_subjects.map((sub, i) => (
+                                                        <div key={i} className="p-3 rounded-lg border border-border/40 bg-muted/20 space-y-1">
+                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                <span className="font-semibold text-sm">{sub.name}</span>
+                                                                <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200">{sub.type}</span>
+                                                                {sub.semester_fit && (
+                                                                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">{sub.semester_fit} sem</span>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-xs text-muted-foreground">{sub.reason}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Suggested Labs */}
+                                        {industryInsights.suggested_labs?.length > 0 && (
+                                            <div className="rounded-xl border border-border/60 bg-card p-5 space-y-4">
+                                                <div className="flex items-center gap-2">
+                                                    <FlaskConical className="h-5 w-5 text-emerald-500" />
+                                                    <h3 className="font-bold text-base">Suggested Labs</h3>
+                                                    <span className="ml-auto text-xs font-mono text-muted-foreground">{industryInsights.suggested_labs.length}</span>
+                                                </div>
+                                                <div className="space-y-3">
+                                                    {industryInsights.suggested_labs.map((lab, i) => (
+                                                        <div key={i} className="p-3 rounded-lg border border-border/40 bg-muted/20 space-y-2">
+                                                            <span className="font-semibold text-sm">{lab.name}</span>
+                                                            <p className="text-xs text-muted-foreground">{lab.description}</p>
+                                                            {lab.tools?.length > 0 && (
+                                                                <div className="flex flex-wrap gap-1.5">
+                                                                    {lab.tools.map((tool, j) => (
+                                                                        <span key={j} className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                                            <Wrench className="h-2.5 w-2.5" />{tool}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Industry Certifications */}
+                                    {industryInsights.industry_certifications?.length > 0 && (
+                                        <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-5 space-y-4">
+                                            <div className="flex items-center gap-2">
+                                                <Award className="h-5 w-5 text-amber-500" />
+                                                <h3 className="font-bold text-base">Recommended Certifications</h3>
+                                            </div>
+                                            <div className="grid gap-3 sm:grid-cols-2">
+                                                {industryInsights.industry_certifications.map((cert, i) => (
+                                                    <div key={i} className="flex items-start gap-3 p-3 rounded-lg border border-amber-200/60 bg-white/60">
+                                                        <Award className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                                                        <div className="min-w-0">
+                                                            <span className="font-semibold text-sm">{cert.name}</span>
+                                                            <p className="text-xs text-muted-foreground">{cert.provider}</p>
+                                                            <p className="text-xs text-amber-700 mt-0.5">{cert.relevance}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </CardContent>
+                </Card>
             </motion.div>
 
             {/* ─── Upload Section ──────────────────────────── */}

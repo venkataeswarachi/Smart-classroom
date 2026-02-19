@@ -384,3 +384,101 @@ def get_status():
             status_code=500,
             detail=f"Error getting status: {str(e)}",
         )
+
+
+# ─── Industry Trends & Curriculum Suggestions ──────────────────────────────
+class IndustryInsightsRequest(BaseModel):
+    department: str
+    current_subjects: Optional[List[str]] = None
+
+
+@app.post("/curriculum/industry-insights")
+async def industry_insights(request: IndustryInsightsRequest):
+    """
+    Use Groq compound-beta (with built-in web search) to fetch
+    real-time industry trends and suggest subjects/labs for a department.
+    """
+    if not curriculum_llm:
+        raise HTTPException(
+            status_code=503,
+            detail="Curriculum LLM is not initialised. Check GROQ_API_KEY.",
+        )
+
+    dept = request.department.strip()
+    existing = ""
+    if request.current_subjects:
+        existing = "\n".join(f"- {s}" for s in request.current_subjects)
+        existing = f"\n\nThe department currently teaches these subjects:\n{existing}"
+
+    prompt = f"""You are an expert education consultant and industry analyst.
+Search the web for the LATEST industry trends, hiring demands, and technology shifts relevant to a **{dept}** department in 2025-2026.{existing}
+
+Based on your research, provide a JSON response with EXACTLY this structure (no markdown fences, just raw JSON):
+{{
+  "trending_technologies": [
+    {{
+      "name": "Technology/Framework name",
+      "description": "One-line description of why it is trending",
+      "demand_level": "High | Medium | Rising"
+    }}
+  ],
+  "suggested_subjects": [
+    {{
+      "name": "Subject name",
+      "type": "Theory | Lab | Elective",
+      "semester_fit": "Suggested semester (e.g. 5th or 6th)",
+      "reason": "Why this subject will help students"
+    }}
+  ],
+  "suggested_labs": [
+    {{
+      "name": "Lab / Workshop name",
+      "tools": ["Tool1", "Tool2"],
+      "description": "What students will learn"
+    }}
+  ],
+  "industry_certifications": [
+    {{
+      "name": "Certification name",
+      "provider": "Provider (e.g. AWS, Google, Microsoft)",
+      "relevance": "Brief relevance note"
+    }}
+  ],
+  "summary": "A 3-4 sentence executive summary of the current industry landscape for this department and key recommendations."
+}}
+
+Be specific, practical, and base your answer on real current industry data. Include at least 6 trending technologies, 5 suggested subjects, 4 suggested labs, and 4 certifications."""
+
+    try:
+        from langchain_core.messages import HumanMessage
+        import json
+
+        messages = [HumanMessage(content=prompt)]
+        response = curriculum_llm.llm.invoke(messages)
+        raw = response.content
+
+        # Parse JSON
+        cleaned = raw.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.split("\n", 1)[1]
+        if cleaned.endswith("```"):
+            cleaned = cleaned.rsplit("```", 1)[0]
+        cleaned = cleaned.strip()
+
+        try:
+            parsed = json.loads(cleaned)
+            return parsed
+        except json.JSONDecodeError:
+            return {
+                "trending_technologies": [],
+                "suggested_subjects": [],
+                "suggested_labs": [],
+                "industry_certifications": [],
+                "summary": raw,
+            }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating industry insights: {str(e)}",
+        )

@@ -9,6 +9,8 @@ import {
     Calendar,
     Users,
     BookOpen,
+    FileText,
+    UserCog,
     LogOut,
     Menu,
     X
@@ -20,7 +22,8 @@ const sidebarItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/deo" },
     { icon: Calendar, label: "Timetable Mgmt", href: "/deo/timetable" },
     { icon: BookOpen, label: "Curriculum Mgmt", href: "/deo/curriculum" },
-    { icon: Users, label: "Student Mgmt", href: "/deo/students" },
+    { icon: UserCog, label: "User Management", href: "/deo/users" },
+    { icon: FileText, label: "Resources", href: "/deo/resources" },
 ];
 
 export default function DEOLayout({ children }: { children: React.ReactNode }) {
