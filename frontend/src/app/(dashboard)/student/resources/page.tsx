@@ -66,7 +66,7 @@ export default function StudentResourcesPage() {
     const fetchResources = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await api.get("/faculty/resources/view/all");
+            const res = await api.get("/faculty/resources/my-dept");
             if (Array.isArray(res.data)) {
                 setResources(res.data);
                 setFilteredResources(res.data);
@@ -75,7 +75,7 @@ export default function StudentResourcesPage() {
                 setFilteredResources([]);
             }
         } catch (err) {
-            console.error("Failed to fetch all resources:", err);
+            console.error("Failed to fetch department resources:", err);
             setResources([]);
             setFilteredResources([]);
         } finally {
@@ -158,10 +158,10 @@ export default function StudentResourcesPage() {
         <div className="max-w-7xl mx-auto space-y-8 pb-10">
             <div className="flex flex-col gap-2">
                 <h1 className="text-4xl font-black tracking-tight text-foreground">
-                    Learning Resources<span className="text-primary">.</span>
+                    Department Resources<span className="text-primary">.</span>
                 </h1>
                 <p className="text-lg text-muted-foreground">
-                    Browse and download study materials uploaded by faculty.
+                    Browse and download study materials shared by your department faculty.
                     {!loading && resources.length > 0 && (
                         <span className="ml-2 inline-flex items-center font-mono text-xs font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                             {resources.length} resource{resources.length !== 1 ? "s" : ""} available

@@ -110,4 +110,14 @@ public class DEOController {
         stats.put("attendanceRate", totalStudents > 0 ? Math.round((presentToday * 100.0) / totalStudents) : 0);
         return ResponseEntity.ok(stats);
     }
+
+    @org.springframework.web.bind.annotation.GetMapping("/my-dept")
+    public ResponseEntity<?> getMyDept(org.springframework.security.core.Authentication auth) {
+        Faculty deoFaculty = facultyRepo.findByEmail(auth.getName())
+                .orElseThrow(() -> new RuntimeException("DEO profile not found"));
+        java.util.Map<String, String> result = new java.util.HashMap<>();
+        result.put("department", deoFaculty.getDept());
+        result.put("name", deoFaculty.getName());
+        return ResponseEntity.ok(result);
+    }
 }
