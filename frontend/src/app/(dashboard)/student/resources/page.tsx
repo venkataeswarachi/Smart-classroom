@@ -66,9 +66,7 @@ export default function StudentResourcesPage() {
     const fetchResources = useCallback(async () => {
         setLoading(true);
         try {
-            console.log("Fetching all resources...");
-            const res = await api.get("/faculty/resources/all");
-            console.log("Resources fetched:", res.data);
+            const res = await api.get("/faculty/resources/view/all");
             if (Array.isArray(res.data)) {
                 setResources(res.data);
                 setFilteredResources(res.data);
@@ -89,16 +87,26 @@ export default function StudentResourcesPage() {
         fetchResources();
     }, [fetchResources]);
 
-    // Handle client-side filtering or server-side if needed.
-    // User asked to "keep search feature". 
-    // We can filter the already fetched list for instant results, 
-    // OR call the search API. 
-    // Calling the API ensures we get exact backend matches, but filtering local is faster.
-    // Let's implement Search Button to call Backend for robustness as per previous logic.
+    // Handle client-side filtering as user types for instant results
+    const handleSearchChange = (value: string) => {
+        setSearchCode(value);
+        if (!value.trim()) {
+            setFilteredResources(resources);
+        } else {
+            const q = value.trim().toLowerCase();
+            setFilteredResources(
+                resources.filter(r =>
+                    r.subject.toLowerCase().includes(q) ||
+                    r.fileName.toLowerCase().includes(q) ||
+                    r.uploadedBy.toLowerCase().includes(q)
+                )
+            );
+        }
+    };
+
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!searchCode.trim()) {
-            // Reset to all if empty
             setFilteredResources(resources);
             return;
         }
@@ -152,7 +160,14 @@ export default function StudentResourcesPage() {
                 <h1 className="text-4xl font-black tracking-tight text-foreground">
                     Learning Resources<span className="text-primary">.</span>
                 </h1>
-                <p className="text-lg text-muted-foreground">Browse and download study materials uploaded by faculty.</p>
+                <p className="text-lg text-muted-foreground">
+                    Browse and download study materials uploaded by faculty.
+                    {!loading && resources.length > 0 && (
+                        <span className="ml-2 inline-flex items-center font-mono text-xs font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                            {resources.length} resource{resources.length !== 1 ? "s" : ""} available
+                        </span>
+                    )}
+                </p>
             </div>
 
             {/* Search Bar */}
@@ -164,9 +179,9 @@ export default function StudentResourcesPage() {
                             <div className="relative">
                                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                    placeholder="Enter Subject Code (e.g. CS302)"
+                                    placeholder="Search by subject code, file name, or faculty..."
                                     value={searchCode}
-                                    onChange={e => setSearchCode(e.target.value)}
+                                    onChange={e => handleSearchChange(e.target.value)}
                                     className="pl-9 font-mono uppercase"
                                 />
                             </div>
@@ -189,7 +204,28 @@ export default function StudentResourcesPage() {
             {/* Resources Grid */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 <AnimatePresence mode="popLayout">
-                    {filteredResources.length === 0 && !loading ? (
+                    {loading ? (
+                        // Loading skeleton cards
+                        Array.from({ length: 8 }).map((_, i) => (
+                            <div key={`skel-${i}`} className="animate-pulse">
+                                <Card className="h-full border-border/40">
+                                    <CardHeader className="pb-3">
+                                        <div className="h-12 w-12 rounded-xl bg-muted mb-3" />
+                                        <div className="h-5 bg-muted rounded w-3/4 mb-2" />
+                                        <div className="h-4 bg-muted rounded w-1/3" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="space-y-2 border-t border-border/50 pt-4 mb-4">
+                                            <div className="h-3 bg-muted rounded w-full" />
+                                            <div className="h-3 bg-muted rounded w-2/3" />
+                                            <div className="h-3 bg-muted rounded w-1/2" />
+                                        </div>
+                                        <div className="h-9 bg-muted rounded w-full" />
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        ))
+                    ) : filteredResources.length === 0 ? (
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}

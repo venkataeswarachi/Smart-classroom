@@ -1,13 +1,14 @@
 package com.management.smartclass.services;
 
+import com.management.smartclass.Repos.FacultyRepo;
 import com.management.smartclass.Repos.FacultyResourceRepo;
+import com.management.smartclass.models.Faculty;
 import com.management.smartclass.models.FacultyResource;
 import com.management.smartclass.payload.FacultyResourceMetaDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,6 +24,9 @@ public class ResourcesService {
 
     @Autowired
     private FacultyResourceRepo repository;
+
+    @Autowired
+    private FacultyRepo facultyRepo;
 
     @Autowired
     private RagService ragService;
@@ -64,6 +68,12 @@ public class ResourcesService {
         resource.setUploadedBy(facultyUsername);
         resource.setUploadedAt(LocalDateTime.now());
 
+        // Resolve faculty's department
+        Faculty faculty = facultyRepo.findByEmail(facultyUsername).orElse(null);
+        if (faculty != null && faculty.getDept() != null) {
+            resource.setDept(faculty.getDept());
+        }
+
         FacultyResource savedResource = repository.save(resource);
 
         // Trigger RAG ingestion asynchronously
@@ -72,19 +82,22 @@ public class ResourcesService {
         return savedResource;
     }
 
+    private FacultyResourceMetaDTO toDTO(FacultyResource r) {
+        FacultyResourceMetaDTO dto = new FacultyResourceMetaDTO();
+        dto.setId(r.getId());
+        dto.setFileName(r.getFileName());
+        dto.setSubject(r.getSubject());
+        dto.setFileSize(r.getFileSize());
+        dto.setUploadedAt(r.getUploadedAt());
+        dto.setUploadedBy(r.getUploadedBy());
+        dto.setDept(r.getDept());
+        return dto;
+    }
+
     public List<FacultyResourceMetaDTO> getMyResourceMetadata(String faculty) {
         return repository.findByUploadedBy(faculty)
                 .stream()
-                .map(r -> {
-                    FacultyResourceMetaDTO dto = new FacultyResourceMetaDTO();
-                    dto.setId(r.getId());
-                    dto.setFileName(r.getFileName());
-                    dto.setSubject(r.getSubject());
-                    dto.setFileSize(r.getFileSize());
-                    dto.setUploadedAt(r.getUploadedAt());
-                    dto.setUploadedBy(r.getUploadedBy());
-                    return dto;
-                })
+                .map(this::toDTO)
                 .toList();
     }
 
@@ -96,32 +109,28 @@ public class ResourcesService {
     public List<FacultyResourceMetaDTO> getAllResourcesBySubject(String subject) {
         return repository.findBySubjectIgnoreCase(subject)
                 .stream()
-                .map(r -> {
-                    FacultyResourceMetaDTO dto = new FacultyResourceMetaDTO();
-                    dto.setId(r.getId());
-                    dto.setFileName(r.getFileName());
-                    dto.setSubject(r.getSubject());
-                    dto.setFileSize(r.getFileSize());
-                    dto.setUploadedAt(r.getUploadedAt());
-                    dto.setUploadedBy(r.getUploadedBy());
-                    return dto;
-                })
+                .map(this::toDTO)
                 .toList();
     }
 
     public List<FacultyResourceMetaDTO> getAllResources() {
         return repository.findAll()
                 .stream()
-                .map(r -> {
-                    FacultyResourceMetaDTO dto = new FacultyResourceMetaDTO();
-                    dto.setId(r.getId());
-                    dto.setFileName(r.getFileName());
-                    dto.setSubject(r.getSubject());
-                    dto.setFileSize(r.getFileSize());
-                    dto.setUploadedAt(r.getUploadedAt());
-                    dto.setUploadedBy(r.getUploadedBy());
-                    return dto;
-                })
+                .map(this::toDTO)
+                .toList();
+    }
+
+    public List<FacultyResourceMetaDTO> getResourcesByDept(String dept) {
+        return repository.findByDeptOrderByUploadedAtDesc(dept)
+                .stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
+    public List<FacultyResourceMetaDTO> getResourcesByDeptAndSubject(String dept, String subject) {
+        return repository.findByDeptAndSubjectIgnoreCase(dept, subject)
+                .stream()
+                .map(this::toDTO)
                 .toList();
     }
 }

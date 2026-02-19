@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/deo")
-@PreAuthorize("hasRole('DEPT_ADMIN')")
+@PreAuthorize("hasAnyRole('DEPT_ADMIN', 'DEO')")
 public class DEOController {
 
     @Autowired
@@ -55,9 +55,12 @@ public class DEOController {
     }
 
     @org.springframework.web.bind.annotation.GetMapping("/faculty-list")
-    public ResponseEntity<java.util.List<com.management.smartclass.models.Faculty>> getFacultyList() {
-        // Defaulting to CSE for MVP
-        return ResponseEntity.ok(facultyRepo.findAllByDept("CSM"));
+    public ResponseEntity<java.util.List<com.management.smartclass.models.Faculty>> getFacultyList(
+            org.springframework.security.core.Authentication auth) {
+        // Use DEO's department dynamically
+        Faculty deoFaculty = facultyRepo.findByEmail(auth.getName())
+                .orElseThrow(() -> new RuntimeException("DEO profile not found"));
+        return ResponseEntity.ok(facultyRepo.findAllByDept(deoFaculty.getDept()));
     }
 
     @PostMapping("/assign-section")
@@ -75,5 +78,36 @@ public class DEOController {
             return ResponseEntity.ok("Student assigned to " + section);
         }
         return ResponseEntity.badRequest().body("Student not found");
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/students-list")
+    public ResponseEntity<?> getStudentsList(org.springframework.security.core.Authentication auth) {
+        Faculty deoFaculty = facultyRepo.findByEmail(auth.getName())
+                .orElseThrow(() -> new RuntimeException("DEO profile not found"));
+        return ResponseEntity.ok(studentRepo.findByDept(deoFaculty.getDept()));
+    }
+
+    @Autowired
+    private com.management.smartclass.Repos.AttendanceRepo attendanceRepo;
+
+    @org.springframework.web.bind.annotation.GetMapping("/attendance-stats")
+    public ResponseEntity<?> getAttendanceStats(org.springframework.security.core.Authentication auth) {
+        Faculty deoFaculty = facultyRepo.findByEmail(auth.getName())
+                .orElseThrow(() -> new RuntimeException("DEO profile not found"));
+        String dept = deoFaculty.getDept();
+
+        long totalStudents = studentRepo.countByDept(dept);
+        java.time.LocalDate today = java.time.LocalDate.now();
+        long presentToday = attendanceRepo.countByDeptAndDateAndPresent(dept, today, true);
+        long absentToday = totalStudents - presentToday;
+        long totalClasses = attendanceRepo.countByDeptAndDate(dept, today);
+
+        java.util.Map<String, Object> stats = new java.util.HashMap<>();
+        stats.put("totalStudents", totalStudents);
+        stats.put("presentToday", presentToday);
+        stats.put("absentToday", absentToday);
+        stats.put("totalClassesToday", totalClasses);
+        stats.put("attendanceRate", totalStudents > 0 ? Math.round((presentToday * 100.0) / totalStudents) : 0);
+        return ResponseEntity.ok(stats);
     }
 }

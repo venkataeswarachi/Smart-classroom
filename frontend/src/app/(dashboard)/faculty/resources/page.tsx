@@ -16,7 +16,13 @@ import {
     AlertCircle,
     CloudUpload,
     File,
-    X
+    X,
+    Search,
+    ExternalLink,
+    Layers,
+    Calendar,
+    User,
+    RefreshCw
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -27,6 +33,7 @@ interface ResourceMeta {
     fileSize: number;
     uploadedAt: string | number[];
     uploadedBy: string;
+    dept?: string;
 }
 
 function formatFileSize(bytes: number): string {
@@ -62,10 +69,17 @@ function formatDate(dateInput: string | number[]): string {
 }
 
 export default function FacultyResourcesPage() {
+    const [activeTab, setActiveTab] = useState<"upload" | "department">("upload");
     const [loading, setLoading] = useState(false);
     const [fetchingResources, setFetchingResources] = useState(true);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [myResources, setMyResources] = useState<ResourceMeta[]>([]);
+
+    // Department resources state
+    const [deptResources, setDeptResources] = useState<ResourceMeta[]>([]);
+    const [filteredDeptResources, setFilteredDeptResources] = useState<ResourceMeta[]>([]);
+    const [deptLoading, setDeptLoading] = useState(true);
+    const [deptSearch, setDeptSearch] = useState("");
 
     // Form state
     const [subject, setSubject] = useState("");
@@ -83,9 +97,30 @@ export default function FacultyResourcesPage() {
         }
     }, []);
 
+    const fetchDeptResources = useCallback(async () => {
+        setDeptLoading(true);
+        try {
+            const res = await api.get("/faculty/resources/my-dept");
+            if (Array.isArray(res.data)) {
+                setDeptResources(res.data);
+                setFilteredDeptResources(res.data);
+            } else {
+                setDeptResources([]);
+                setFilteredDeptResources([]);
+            }
+        } catch (err) {
+            console.error("Failed to fetch department resources:", err);
+            setDeptResources([]);
+            setFilteredDeptResources([]);
+        } finally {
+            setDeptLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         fetchMyResources();
-    }, [fetchMyResources]);
+        fetchDeptResources();
+    }, [fetchMyResources, fetchDeptResources]);
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -185,6 +220,35 @@ export default function FacultyResourcesPage() {
         show: { opacity: 1, y: 0 }
     };
 
+    const handleDeptSearchChange = (value: string) => {
+        setDeptSearch(value);
+        if (!value.trim()) {
+            setFilteredDeptResources(deptResources);
+        } else {
+            const q = value.trim().toLowerCase();
+            setFilteredDeptResources(
+                deptResources.filter(r =>
+                    r.subject.toLowerCase().includes(q) ||
+                    r.fileName.toLowerCase().includes(q) ||
+                    r.uploadedBy.toLowerCase().includes(q)
+                )
+            );
+        }
+    };
+
+    const handleViewPdfDept = async (id: number) => {
+        try {
+            const response = await api.get(`/faculty/resources/view/${id}`, {
+                responseType: 'blob'
+            });
+            const file = new Blob([response.data], { type: 'application/pdf' });
+            const fileURL = URL.createObjectURL(file);
+            window.open(fileURL, "_blank");
+        } catch (error) {
+            console.error("Error viewing PDF:", error);
+        }
+    };
+
     return (
         <motion.div
             variants={container}
@@ -195,14 +259,45 @@ export default function FacultyResourcesPage() {
             {/* Header */}
             <motion.div variants={item} className="flex flex-col gap-2">
                 <h1 className="text-4xl font-black tracking-tight text-foreground">
-                    Share Resources<span className="text-primary">.</span>
+                    Resources<span className="text-primary">.</span>
                 </h1>
                 <p className="text-lg text-muted-foreground">
-                    Upload PDF study materials for your students to access.
+                    Upload materials or browse your department&apos;s shared resources.
                 </p>
             </motion.div>
 
+            {/* Tab Switcher */}
+            <motion.div variants={item} className="flex gap-2 bg-muted/40 p-1 rounded-xl w-fit">
+                <button
+                    onClick={() => setActiveTab("upload")}
+                    className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                        activeTab === "upload"
+                            ? "bg-background shadow-sm text-foreground"
+                            : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                    Upload & My Resources
+                </button>
+                <button
+                    onClick={() => setActiveTab("department")}
+                    className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
+                        activeTab === "department"
+                            ? "bg-background shadow-sm text-foreground"
+                            : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                    Department Resources
+                    {!deptLoading && deptResources.length > 0 && (
+                        <span className="font-mono text-xs font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                            {deptResources.length}
+                        </span>
+                    )}
+                </button>
+            </motion.div>
+
             {/* Upload Form Card */}
+            {activeTab === "upload" && (
+            <>
             <motion.div variants={item}>
                 <Card className="border-0 shadow-lg bg-card/60 backdrop-blur-sm ring-1 ring-border/50">
                     <CardHeader className="pb-4 border-b border-border/50">

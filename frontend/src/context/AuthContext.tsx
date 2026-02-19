@@ -44,8 +44,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setToken(newToken);
         setUser({ sub: email, role });
 
-        // Redirect based on role
-        switch (role) {
+        // Redirect based on role (handle both prefixed and unprefixed)
+        const normalizedRole = role.replace("ROLE_", "");
+        switch (normalizedRole) {
             case "ADMIN":
                 router.push("/admin");
                 break;
@@ -56,10 +57,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 router.push("/student");
                 break;
             case "DEPT_ADMIN":
-                router.push("/deo");
-                break;
             case "DEO":
-                router.push("/deo"); // If DEO exists
+                router.push("/deo");
                 break;
             default:
                 router.push("/");

@@ -4,27 +4,32 @@ import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Calendar, Users, ArrowRight, Zap, GraduationCap, Layers, ArrowUpRight } from "lucide-react";
+import { BookOpen, Calendar, Users, ArrowRight, Zap, GraduationCap, Layers, ArrowUpRight, CalendarCheck, TrendingUp, TrendingDown } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export default function DEODashboard() {
     const [stats, setStats] = useState({ totalStudents: 0, totalFaculty: 0 });
+    const [attendance, setAttendance] = useState<{ totalStudents: number; presentToday: number; absentToday: number; attendanceRate: number } | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchStats = async () => {
+        const fetchData = async () => {
             try {
-                const res = await api.get("/deo/stats");
-                setStats(res.data);
+                const [statsRes, attRes] = await Promise.all([
+                    api.get("/deo/stats"),
+                    api.get("/deo/attendance-stats").catch(() => null),
+                ]);
+                setStats(statsRes.data);
+                if (attRes) setAttendance(attRes.data);
             } catch (err) {
-                console.error("Failed to fetch stats", err);
+                console.error("Failed to fetch data", err);
             } finally {
                 setLoading(false);
             }
         };
-        fetchStats();
+        fetchData();
     }, []);
 
     // Animation Variants (Same as Faculty/Student)
@@ -52,7 +57,7 @@ export default function DEODashboard() {
                 <p className="text-lg text-muted-foreground">Manage department operations and resources.</p>
             </motion.div>
 
-            <motion.div variants={item} className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <motion.div variants={item} className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
                 {/* Stats Card: Students */}
                 <Card className="glass-card bg-gradient-to-br from-indigo-500/5 to-transparent border-indigo-500/10 group hover:border-indigo-500/20 transition-all">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -92,6 +97,24 @@ export default function DEODashboard() {
                     <CardContent>
                         <div className="text-3xl font-bold text-foreground">Active</div>
                         <p className="text-xs font-medium text-pink-600 mt-1">Synced with Faculty</p>
+                    </CardContent>
+                </Card>
+
+                {/* Stats Card: Today's Attendance */}
+                <Card className="glass-card bg-gradient-to-br from-emerald-500/5 to-transparent border-emerald-500/10 group hover:border-emerald-500/20 transition-all">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-semibold text-muted-foreground group-hover:text-emerald-600 transition-colors">Dept Attendance</CardTitle>
+                        <div className="h-8 w-8 rounded-full bg-emerald-100/50 flex items-center justify-center">
+                            <CalendarCheck className="h-5 w-5 text-emerald-600" />
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className={cn("text-3xl font-bold", attendance ? (attendance.attendanceRate >= 75 ? "text-emerald-600" : attendance.attendanceRate >= 50 ? "text-amber-600" : "text-red-600") : "text-foreground")}>
+                            {loading ? "--" : attendance ? `${attendance.attendanceRate.toFixed(1)}%` : "N/A"}
+                        </div>
+                        <p className="text-xs font-medium text-emerald-600 mt-1">
+                            {attendance ? `${attendance.presentToday}/${attendance.totalStudents} present today` : "No data"}
+                        </p>
                     </CardContent>
                 </Card>
 

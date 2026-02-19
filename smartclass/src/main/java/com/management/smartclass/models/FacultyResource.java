@@ -18,13 +18,14 @@ public class FacultyResource {
 
     private String subject;
     private String uploadedBy; // faculty username or email
+    private String dept;
 
     private LocalDateTime uploadedAt;
 
     public FacultyResource() {
     }
 
-    public FacultyResource(Long id, String fileName, String fileType, String filePath, Long fileSize, String subject, String uploadedBy, LocalDateTime uploadedAt) {
+    public FacultyResource(Long id, String fileName, String fileType, String filePath, Long fileSize, String subject, String uploadedBy, String dept, LocalDateTime uploadedAt) {
         this.id = id;
         this.fileName = fileName;
         this.fileType = fileType;
@@ -32,6 +33,7 @@ public class FacultyResource {
         this.fileSize = fileSize;
         this.subject = subject;
         this.uploadedBy = uploadedBy;
+        this.dept = dept;
         this.uploadedAt = uploadedAt;
     }
 
@@ -89,6 +91,14 @@ public class FacultyResource {
 
     public void setUploadedBy(String uploadedBy) {
         this.uploadedBy = uploadedBy;
+    }
+
+    public String getDept() {
+        return dept;
+    }
+
+    public void setDept(String dept) {
+        this.dept = dept;
     }
 
     public LocalDateTime getUploadedAt() {

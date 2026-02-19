@@ -10,7 +10,11 @@ import {
     LogOut,
     Menu,
     Users,
-    X
+    X,
+    Building2,
+    BookOpen,
+    CalendarCheck,
+    Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -18,6 +22,10 @@ import { cn } from "@/lib/utils";
 const sidebarItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
     { icon: Users, label: "Manage Users", href: "/admin/users" },
+    { icon: Building2, label: "Departments", href: "/admin/departments" },
+    { icon: BookOpen, label: "Curriculum", href: "/admin/curriculum" },
+    { icon: CalendarCheck, label: "Attendance", href: "/admin/attendance" },
+    { icon: Calendar, label: "Timetable", href: "/admin/timetable" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

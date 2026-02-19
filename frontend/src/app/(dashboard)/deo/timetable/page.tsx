@@ -8,13 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Loader2, CheckCircle, Upload, Plus, Pencil, Calendar, Settings2, Clock, ArrowRight } from "lucide-react";
+import { Loader2, CheckCircle, Upload, Plus, Pencil, Calendar, Settings2, Clock, ArrowRight, List } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { AllTimetablesView } from "@/components/AllTimetablesView";
 
 const DAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
 
 export default function DEOTimetablePage() {
+    const [activeTab, setActiveTab] = useState<"create" | "view">("view");
     const [step, setStep] = useState<"config" | "editor">("config");
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -129,7 +131,23 @@ export default function DEOTimetablePage() {
 
     if (step === "config") {
         return (
-            <motion.div variants={container} initial="hidden" animate="show" className="max-w-4xl mx-auto space-y-6">
+            <div className="space-y-6">
+                {/* Tab Switcher */}
+                <div className="flex items-center gap-3">
+                    <Button variant={activeTab === "view" ? "default" : "outline"} onClick={() => setActiveTab("view")} className="font-semibold">
+                        <List className="h-4 w-4 mr-2" /> All Timetables
+                    </Button>
+                    <Button variant={activeTab === "create" ? "default" : "outline"} onClick={() => setActiveTab("create")} className="font-semibold">
+                        <Plus className="h-4 w-4 mr-2" /> Create Timetable
+                    </Button>
+                </div>
+
+                {activeTab === "view" && (
+                    <AllTimetablesView userRole="DEO" />
+                )}
+
+                {activeTab === "create" && (
+            <motion.div key="config" variants={container} initial="hidden" animate="show" className="max-w-4xl mx-auto space-y-6">
                 <motion.div variants={item} className="flex flex-col gap-2">
                     <h1 className="text-4xl font-black tracking-tight text-foreground">
                         Create Timetable<span className="text-primary">.</span>
@@ -208,12 +226,14 @@ export default function DEOTimetablePage() {
                     </Card>
                 </motion.div>
             </motion.div>
+                )}
+            </div>
         );
     }
 
     // EDITOR VIEW
     return (
-        <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+        <motion.div key="editor" variants={container} initial="hidden" animate="show" className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <motion.div variants={item}>
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">Edit Schedule</h1>

@@ -11,5 +11,7 @@ public interface FacultyResourceRepo
 
     List<FacultyResource> findByUploadedBy(String uploadedBy);
     List<FacultyResource> findBySubjectIgnoreCase(String subject);
+    List<FacultyResource> findByDeptOrderByUploadedAtDesc(String dept);
+    List<FacultyResource> findByDeptAndSubjectIgnoreCase(String dept, String subject);
 }
 

@@ -10,16 +10,19 @@ public class FacultyResourceMetaDTO {
     private Long fileSize;
     private LocalDateTime uploadedAt;
     private String uploadedBy;
+    private String dept;
+
     public FacultyResourceMetaDTO() {
     }
 
-    public FacultyResourceMetaDTO(Long id, String fileName, String subject, Long fileSize, LocalDateTime uploadedAt, String uploadedBy) {
+    public FacultyResourceMetaDTO(Long id, String fileName, String subject, Long fileSize, LocalDateTime uploadedAt, String uploadedBy, String dept) {
         this.id = id;
         this.fileName = fileName;
         this.subject = subject;
         this.fileSize = fileSize;
         this.uploadedAt = uploadedAt;
         this.uploadedBy = uploadedBy;
+        this.dept = dept;
     }
 
     public Long getId() {
@@ -68,5 +71,13 @@ public class FacultyResourceMetaDTO {
 
     public void setUploadedBy(String uploadedBy) {
         this.uploadedBy = uploadedBy;
+    }
+
+    public String getDept() {
+        return dept;
+    }
+
+    public void setDept(String dept) {
+        this.dept = dept;
     }
 }

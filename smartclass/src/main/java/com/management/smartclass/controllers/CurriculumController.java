@@ -23,7 +23,7 @@ public class CurriculumController {
     private CurriculumService curriculumService;
 
     @PostMapping("/add")
-    @PreAuthorize("hasRole('DEO') or hasRole('DEPT_ADMIN')")
+    @PreAuthorize("hasRole('DEO') or hasRole('DEPT_ADMIN') or hasRole('ADMIN')")
     public ResponseEntity<String> addCurriculum(@RequestParam int year, @RequestParam int semester, @RequestParam MultipartFile file,Authentication auth) throws IOException {
         return ResponseEntity.ok(curriculumService.uploadCurriculam(file,year,semester, auth.getName()));
     }

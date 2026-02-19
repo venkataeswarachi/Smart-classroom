@@ -19,7 +19,7 @@ interface Slot {
 
 interface TimetableGridProps {
     data: Slot[];
-    userRole?: "STUDENT" | "FACULTY" | "ADMIN";
+    userRole?: "STUDENT" | "FACULTY" | "ADMIN" | "DEO";
 }
 
 const DAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];

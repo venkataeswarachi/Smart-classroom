@@ -27,7 +27,9 @@ export default function LoginPage() {
             const token = response.data;
 
             const payload = JSON.parse(atob(token.split('.')[1]));
-            const role = payload.roles || payload.role || payload.authorities?.[0]?.authority || "ROLE_STUDENT";
+            const rawRole = payload.roles || payload.role || payload.authorities?.[0]?.authority || "STUDENT";
+            // Normalize: always store with ROLE_ prefix
+            const role = rawRole.startsWith("ROLE_") ? rawRole : `ROLE_${rawRole}`;
             console.log("User role:", role);
             login(token, role, email);
         } catch (err: any) {

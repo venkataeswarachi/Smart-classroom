@@ -21,6 +21,9 @@ public class DEOService {
     private SubjectFacultyRepo subjectFacultyRepo;
     public String saveGridTimetable(TimeTableGridDTO dto) {
 
+        // Delete existing timetable for this dept/section/semester before re-saving
+        timetableRepo.deleteByDeptAndSectionAndSemester(dto.getDept(), dto.getSection(), dto.getSemester());
+
         LocalTime currentTime = LocalTime.parse(dto.getCollegeStartTime());
 
         for (Map.Entry<String, DayGridDTO> dayEntry : dto.getDays().entrySet()) {
