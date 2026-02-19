@@ -32,7 +32,14 @@ export default function StudentScanPage() {
             }, 2000);
         } catch (err: any) {
             setStatus("error");
-            setMessage(err.response?.data?.message || err.response?.data || "Invalid QR Code or Expired");
+            const data = err.response?.data;
+            // Spring Boot returns: {timestamp, status, error, path} or {message}
+            // Extract a human-readable string from whatever shape the backend sends
+            const errorMsg =
+                typeof data === "string"
+                    ? data
+                    : data?.message || data?.error || data?.detail || "Invalid QR Code or session expired.";
+            setMessage(String(errorMsg));
         }
     };
 

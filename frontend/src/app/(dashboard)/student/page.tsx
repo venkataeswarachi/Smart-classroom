@@ -29,22 +29,19 @@ export default function StudentDashboard() {
                 ]);
                 setTodayClasses(todayRes.data);
 
-                // Try to fetch real stats if available
+                // Fetch real stats from backend
+                const sem = profileRes.data?.semester ?? 1;
                 try {
-                    const sem = profileRes.data.semester;
                     const statsRes = await api.get(`/student/semester/${sem}/percentage`);
                     setStats({
-                        attendancePercentage: statsRes.data.percentage,
-                        classesAttended: statsRes.data.presentClasses,
-                        totalClasses: statsRes.data.totalClasses
+                        attendancePercentage: statsRes.data.percentage ?? 0,
+                        classesAttended: statsRes.data.presentClasses ?? 0,
+                        totalClasses: statsRes.data.totalClasses ?? 0
                     });
                 } catch (e) {
-                    // Fallback mock if stats fail or endpoint 404
-                    setStats({
-                        attendancePercentage: 85.5,
-                        classesAttended: 34,
-                        totalClasses: 40
-                    });
+                    console.error("Failed to fetch attendance stats:", e);
+                    // Keep zeros — don't lie to the user with mock data
+                    setStats({ attendancePercentage: 0, classesAttended: 0, totalClasses: 0 });
                 }
 
             } catch (err) {

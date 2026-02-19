@@ -86,6 +86,25 @@ public class FacultyController {
                                                 java.time.LocalTime.parse(startTime)));
         }
 
+        /**
+         * Returns ALL enrolled students for a class session with present/absent status.
+         * Absent students who never scanned are included (present=false).
+         */
+        @GetMapping("/attendance/class-roster")
+        public ResponseEntity<List<com.management.smartclass.payload.FacultyAttendanceViewDTO>> getClassRoster(
+                        Authentication auth,
+                        @RequestParam String subjectCode,
+                        @RequestParam String date,
+                        @RequestParam String startTime) {
+
+                return ResponseEntity.ok(
+                                attendanceService.getClassRoster(
+                                                auth.getName(),
+                                                subjectCode,
+                                                java.time.LocalDate.parse(date),
+                                                java.time.LocalTime.parse(startTime)));
+        }
+
         @PostMapping("/generate-qr")
         public ResponseEntity<String> generateQr(
                         @RequestBody QrGenerateDTO dto,

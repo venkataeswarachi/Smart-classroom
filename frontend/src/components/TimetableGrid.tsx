@@ -91,7 +91,7 @@ export function TimetableGrid({ data, userRole = "STUDENT" }: TimetableGridProps
 
                                                 return (
                                                     <div
-                                                        key={slot.id}
+                                                        key={`${group.day}-${slot.id}-${index}`}
                                                         className={cn(
                                                             "flex-shrink-0 flex flex-col justify-between p-3.5 rounded-xl border min-h-[110px] w-44 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg",
                                                             isBreak

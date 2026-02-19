@@ -38,10 +38,12 @@ public class AttendanceService {
         public String markAttendance(String token, String studentEmail) {
 
                 QrSession qr = qrRepo.findByToken(token)
-                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired QR code"));
+                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                                "Invalid or expired QR code"));
 
                 if (qr.getExpiresAt().isBefore(LocalDateTime.now())) {
-                        throw new ResponseStatusException(HttpStatus.GONE, "QR code has expired. Ask your faculty to generate a new one.");
+                        throw new ResponseStatusException(HttpStatus.GONE,
+                                        "QR code has expired. Ask your faculty to generate a new one.");
                 }
 
                 boolean alreadyMarked = attendanceRepo.existsByStudentEmailAndSubjectCodeAndDateAndStartTime(
@@ -51,7 +53,8 @@ public class AttendanceService {
                                 qr.getStartTime());
 
                 if (alreadyMarked) {
-                        throw new ResponseStatusException(HttpStatus.CONFLICT, "Attendance already marked for this period");
+                        throw new ResponseStatusException(HttpStatus.CONFLICT,
+                                        "Attendance already marked for this period");
                 }
 
                 Attendance att = new Attendance();
@@ -226,14 +229,16 @@ public class AttendanceService {
                 }
 
                 Students student = studentRepo.findByEmail(studentEmail)
-                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student not found: " + studentEmail));
+                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                                "Student not found: " + studentEmail));
 
                 // Look up the timetable slot to fill in subjectName and endTime
                 List<TimeTableSlot> slots = timeTableRepo.findByDeptAndSectionAndSemesterAndDayOrderByStartTime(
                                 student.getDept(), student.getSection(), student.getSemester(),
                                 date.getDayOfWeek().name());
                 TimeTableSlot matchedSlot = slots.stream()
-                                .filter(s -> s.getSubjectCode().equals(subjectCode) && s.getStartTime().equals(startTime))
+                                .filter(s -> s.getSubjectCode().equals(subjectCode)
+                                                && s.getStartTime().equals(startTime))
                                 .findFirst().orElse(null);
 
                 Attendance att = new Attendance();
@@ -257,6 +262,63 @@ public class AttendanceService {
         public List<Attendance> getClassAttendance(String subjectCode, LocalDate date, LocalTime startTime) {
                 return attendanceRepo.findBySubjectCodeAndDateAndStartTime(subjectCode, date, startTime);
         }
+
+        // ---------------- CLASS ROSTER (ALL STUDENTS + PRESENT/ABSENT)
+        // ----------------
+        public List<FacultyAttendanceViewDTO> getClassRoster(
+                        String facultyEmail, String subjectCode, LocalDate date, LocalTime startTime) {
+
+                // 1. Find the timetable slot to get dept/section/semester
+                List<TimeTableSlot> slots = timeTableRepo.findByFacultyEmail(facultyEmail);
+                TimeTableSlot matchedSlot = slots.stream()
+                                .filter(s -> s.getSubjectCode() != null
+                                                && s.getSubjectCode().equals(subjectCode)
+                                                && s.getStartTime() != null
+                                                && s.getStartTime().equals(startTime))
+                                .findFirst()
+                                .orElse(null);
+
+                if (matchedSlot == null) {
+                        // Slot not found — still return scanned students so faculty isn't left blank
+                        return attendanceRepo
+                                        .findBySubjectCodeAndDateAndStartTime(subjectCode, date, startTime)
+                                        .stream()
+                                        .map(a -> new FacultyAttendanceViewDTO(
+                                                        a.getStudentEmail(),
+                                                        a.getStudentEmail(),
+                                                        "",
+                                                        a.isPresent()))
+                                        .collect(Collectors.toList());
+                }
+
+                String dept = matchedSlot.getDept();
+                String section = matchedSlot.getSection();
+                int semester = matchedSlot.getSemester();
+
+                // 2. Get ALL enrolled students for this class
+                List<Students> enrolled = studentRepo.findByDeptAndSectionAndSemester(dept, section, semester);
+
+                // 3. Get existing attendance records for this specific session
+                List<Attendance> records = attendanceRepo
+                                .findBySubjectCodeAndDateAndStartTime(subjectCode, date, startTime);
+
+                // Build a lookup map: email -> attendance record
+                Map<String, Attendance> recordMap = records.stream()
+                                .collect(Collectors.toMap(
+                                                Attendance::getStudentEmail,
+                                                a -> a,
+                                                (a1, a2) -> a1 // keep first if duplicates
+                                ));
+
+                // 4. Merge: for each enrolled student, check if they have an attendance record
+                return enrolled.stream().map(student -> {
+                        Attendance att = recordMap.get(student.getEmail());
+                        boolean present = att != null && att.isPresent();
+                        return new FacultyAttendanceViewDTO(
+                                        student.getEmail(),
+                                        student.getName() != null ? student.getName() : student.getEmail(),
+                                        student.getRollno() != null ? student.getRollno() : "",
+                                        present);
+                }).collect(Collectors.toList());
+        }
 }
-
-
